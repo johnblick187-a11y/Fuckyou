@@ -5,21 +5,42 @@ const app = express();
 app.use(express.json());
 app.use(express.static("public"));
 
-// homepage (optional, but good for testing)
-app.get("/", (req, res) => {
-  res.send("Agent 44 is live");
-});
-
-// chat endpoint
-app.post("/api/chat", (req, res) => {
+app.post("/api/chat", async (req, res) => {
   const { message } = req.body;
 
-  res.json({
-    reply: `Agent 44 received: ${message}`
-  });
+  try {
+    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        model: "openai/gpt-4o-mini",
+        messages: [
+          {
+            role: "system",
+            content: "You are Agent 44, a smart, strategic AI agent that helps users plan, build, and execute tasks."
+          },
+          {
+            role: "user",
+            content: message
+          }
+        ]
+      })
+    });
+
+    const data = await response.json();
+
+    res.json({
+      reply: data.choices?.[0]?.message?.content || "No response"
+    });
+
+  } catch (err) {
+    res.json({ reply: "Error contacting AI" });
+  }
 });
 
-// port setup
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
