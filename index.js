@@ -11,6 +11,8 @@ app.post("/api/chat", (req, res) => {
   });
 });
 
-app.listen(3000, () => {
-  console.log("Agent 44 running");
+const PORT = process.env.PORT || 3000;
+
+app.listen(PORT, () => {
+  console.log(`Agent 44 running on port ${PORT}`);
 });
