@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<body style="background:black;color:white;font-family:sans-serif;">
+<h1>Agent 44</h1>
+
+<textarea id="msg" style="width:100%;height:100px;"></textarea>
+<button onclick="send()">Send</button>
+
+<pre id="out"></pre>
+
+<script>
+async function send() {
+  const message = document.getElementById("msg").value;
+
+  const res = await fetch("/api/chat", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({ message })
+  });
+
+  const data = await res.json();
+  document.getElementById("out").textContent = data.reply;
+}
+</script>
+
+</body>
+</html>
