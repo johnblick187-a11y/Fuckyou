@@ -5,8 +5,14 @@ const app = express();
 app.use(express.json());
 app.use(express.static("public"));
 
+// 🧠 simple memory (resets on restart)
+const memory = [];
+
 app.post("/api/chat", async (req, res) => {
   const { message } = req.body;
+
+  // store user message
+  memory.push({ role: "user", content: message });
 
   try {
     const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
@@ -20,21 +26,20 @@ app.post("/api/chat", async (req, res) => {
         messages: [
           {
             role: "system",
-            content: "You are Agent 44, a smart, strategic AI agent that helps users plan, build, and execute tasks."
+            content: "You are Agent 44, a smart, strategic AI agent with memory of past messages."
           },
-          {
-            role: "user",
-            content: message
-          }
+          ...memory
         ]
       })
     });
 
     const data = await response.json();
+    const reply = data.choices?.[0]?.message?.content || "No response";
 
-    res.json({
-      reply: data.choices?.[0]?.message?.content || "No response"
-    });
+    // store AI response
+    memory.push({ role: "assistant", content: reply });
+
+    res.json({ reply });
 
   } catch (err) {
     res.json({ reply: "Error contacting AI" });
