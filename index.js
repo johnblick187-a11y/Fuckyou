@@ -3,6 +3,10 @@ import express from "express";
 const app = express();
 app.use(express.json());
 
+app.get("/", (req, res) => {
+  res.send("Agent 44 is live");
+});
+
 app.post("/api/chat", (req, res) => {
   const { message } = req.body;
 
