@@ -1,27 +1,130 @@
-<!DOCTYPE html>
-<html>
-<body style="background:black;color:white;font-family:sans-serif;">
-<h1>Agent Z</h1>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Agent Z</title>
 
-<textarea id="msg" style="width:100%;height:100px;"></textarea>
-<button onclick="send()">Send</button>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #0b0b0f;
+      color: #fff;
+    }
 
-<pre id="out"></pre>
+    .wrap {
+      max-width: 700px;
+      margin: auto;
+      padding: 20px;
+    }
 
-<script>
-async function send() {
-  const message = document.getElementById("msg").value;
+    h1 {
+      margin-bottom: 10px;
+    }
 
-  const res = await fetch("/api/chat", {
-    method: "POST",
-    headers: {"Content-Type": "application/json"},
-    body: JSON.stringify({ message })
-  });
+    .chat {
+      background: #111;
+      border: 1px solid #333;
+      border-radius: 12px;
+      padding: 10px;
+      height: 400px;
+      overflow-y: auto;
+      margin-bottom: 10px;
+      white-space: pre-wrap;
+    }
 
-  const data = await res.json();
-  document.getElementById("out").textContent = data.reply;
-}
-</script>
+    .msg {
+      margin-bottom: 10px;
+      padding: 10px;
+      border-radius: 10px;
+    }
 
+    .user {
+      background: #1f2a44;
+    }
+
+    .agent {
+      background: #1a1a2b;
+    }
+
+    form {
+      display: flex;
+      gap: 10px;
+    }
+
+    input {
+      flex: 1;
+      padding: 12px;
+      border-radius: 10px;
+      border: none;
+      background: #1a1a2b;
+      color: white;
+    }
+
+    button {
+      padding: 12px;
+      border: none;
+      border-radius: 10px;
+      background: #4f7cff;
+      color: white;
+      font-weight: bold;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+    <h1>Agent Z</h1>
+
+    <div id="chat" class="chat"></div>
+
+    <form id="form">
+      <input id="input" placeholder="Talk to Agent Z..." />
+      <button>Send</button>
+    </form>
+  </div>
+
+  <script>
+    const chat = document.getElementById("chat");
+    const form = document.getElementById("form");
+    const input = document.getElementById("input");
+
+    function add(role, text) {
+      const div = document.createElement("div");
+      div.className = "msg " + role;
+      div.textContent = text;
+      chat.appendChild(div);
+      chat.scrollTop = chat.scrollHeight;
+    }
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const msg = input.value.trim();
+      if (!msg) return;
+
+      add("user", msg);
+      input.value = "";
+
+      const res = await fetch("/ask", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ input: msg })
+      });
+
+      const data = await res.json();
+
+      let output = data.output;
+
+      if (typeof output === "object" && output.reply) {
+        output = output.reply;
+      }
+
+      add("agent", output || "No response");
+    });
+  </script>
 </body>
 </html>
