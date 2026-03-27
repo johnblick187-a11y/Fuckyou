@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "start": "node index.js"
+    "start": "node test-self-mod.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.56.0",
