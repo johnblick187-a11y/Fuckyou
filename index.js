@@ -26,7 +26,7 @@ app.post("/api/chat", async (req, res) => {
         messages: [
           {
             role: "system",
-            content: "You are Agent 44, a smart, strategic AI agent with memory of past messages."
+            content: "You are Agent Z, a smart, strategic AI agent with memory of past messages."
           },
           ...memory
         ]
