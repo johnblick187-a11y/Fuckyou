@@ -1,8 +1,10 @@
 import OpenAI from "openai";
 import SYSTEM_PROMPT from "../systemprompt.js";
 
+const apiKey = process.env.OPENAI_API_KEY || "";
+
 const client = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY
+  apiKey
 });
 
 export async function runAgentStep(input) {
@@ -10,6 +12,12 @@ export async function runAgentStep(input) {
     typeof input === "string" && input.trim()
       ? input.trim()
       : "no input provided";
+
+  if (!apiKey) {
+    return {
+      reply: "Missing OPENAI_API_KEY in Render environment variables."
+    };
+  }
 
   try {
     const completion = await client.chat.completions.create({
@@ -20,15 +28,16 @@ export async function runAgentStep(input) {
       ]
     });
 
+    const reply = completion?.choices?.[0]?.message?.content?.trim();
+
     return {
-      reply: completion.choices[0].message.content
+      reply: reply || "No response from model."
     };
-
-  } catch (err) {
-    console.error("AI ERROR:", err);
+  } catch (error) {
+    console.error("AI ERROR:", error);
 
     return {
-      reply: `AI ERROR:\n${err.message}`
+      reply: `AI ERROR: ${error.message || "Unknown OpenAI error"}`
     };
   }
 }
