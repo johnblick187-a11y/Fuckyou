@@ -1,4 +1,9 @@
+import OpenAI from "openai";
 import SYSTEM_PROMPT from "../systemprompt.js";
+
+const client = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY
+});
 
 export async function runAgentStep(input) {
   const safeInput =
@@ -6,22 +11,24 @@ export async function runAgentStep(input) {
       ? input.trim()
       : "no input provided";
 
-  return {
-    reply: `
-[Agent Z]
+  try {
+    const completion = await client.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [
+        { role: "system", content: SYSTEM_PROMPT },
+        { role: "user", content: safeInput }
+      ]
+    });
 
-System Loaded: YES
+    return {
+      reply: completion.choices[0].message.content
+    };
 
-User Input:
-${safeInput}
+  } catch (err) {
+    console.error("AI ERROR:", err);
 
-Response:
-Analyzing request...
-Providing structured output...
-
-→ You said: "${safeInput}"
-
-(This is still a simulated response — AI not plugged in yet)
-`
-  };
+    return {
+      reply: `AI ERROR:\n${err.message}`
+    };
+  }
 }
