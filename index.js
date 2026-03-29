@@ -1,39 +1,19 @@
 import express from "express";
-import path from "path";
-import { fileURLToPath } from "url";
-import { runAgentStep } from "./core/agentRunner.js";
 
 const app = express();
-const PORT = process.env.PORT || 5000;
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
 app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-app.use(express.static(path.join(__dirname, "public")));
 
+const PORT = process.env.PORT || 3000;
+
+// Health check
 app.get("/", (req, res) => {
-  res.redirect("/index.html");
+  res.send("Agent Z is running 🚀");
 });
 
-app.post("/ask", async (req, res) => {
-  try {
-    const input =
-      typeof req.body.input === "string" && req.body.input.trim()
-        ? req.body.input.trim()
-        : "no input provided";
-
-    const result = await runAgentStep(input);
-    res.json({ output: result });
-  } catch (error) {
-    console.error("ASK ERROR:", error);
-    res.status(500).json({
-      output: `ASK ERROR: ${error.message || "Unknown error"}`
-    });
-  }
+app.get("/api/healthz", (req, res) => {
+  res.json({ status: "ok" });
 });
 
 app.listen(PORT, () => {
-  console.log(`TweakBot running on port ${PORT}`);
+  console.log(`Server running on port ${PORT}`);
 });
