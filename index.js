@@ -7,7 +7,7 @@ const PORT = process.env.PORT || 3000;
 
 // Health check
 app.get("/", (req, res) => {
-  res.send("Agent Z is running 🚀");
+  res.send("TweakBot is running 🚀");
 });
 
 app.get("/api/healthz", (req, res) => {
