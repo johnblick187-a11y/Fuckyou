@@ -35,5 +35,5 @@ app.post("/ask", async (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`Agent Z running on port ${PORT}`);
+  console.log(`TweakBot running on port ${PORT}`);
 });
