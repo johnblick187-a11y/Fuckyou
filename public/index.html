@@ -4,7 +4,6 @@
   <meta charset="UTF-8" />
   <title>TweakBot</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
   <style>
     body {
       margin: 0;
@@ -51,52 +50,40 @@
       padding: 16px;
       display: flex;
       flex-direction: column;
-      gap: 12px;
+      gap: 16px;
     }
 
     .msg {
       max-width: 90%;
-      line-height: 1.45;
       word-wrap: break-word;
+      line-height: 1.45;
     }
 
     .user {
-      color: #ff4d4d;
       align-self: flex-end;
       text-align: right;
+      color: #ff5a5a;
     }
 
     .bot {
-      color: #e8e8e8;
       align-self: flex-start;
+      color: #f3f3f3;
     }
 
-    .bot strong.sender {
+    .sender {
+      display: block;
+      font-weight: 700;
+      margin-bottom: 8px;
       color: #a5d6a7;
     }
 
-    .markdown {
-      margin-top: 6px;
-    }
-
     .markdown p {
-      margin: 0 0 10px;
-    }
-
-    .markdown h1,
-    .markdown h2,
-    .markdown h3,
-    .markdown h4,
-    .markdown h5,
-    .markdown h6 {
-      margin: 12px 0 8px;
-      line-height: 1.25;
-      color: #fff;
+      margin: 0 0 12px;
     }
 
     .markdown ul,
     .markdown ol {
-      margin: 8px 0 12px 20px;
+      margin: 0 0 12px 20px;
       padding: 0;
     }
 
@@ -104,56 +91,41 @@
       margin: 4px 0;
     }
 
-    .markdown blockquote {
-      margin: 10px 0;
-      padding: 8px 12px;
-      border-left: 3px solid #444;
-      background: #161616;
-      color: #ccc;
+    .markdown h1,
+    .markdown h2,
+    .markdown h3,
+    .markdown h4 {
+      margin: 0 0 12px;
+      line-height: 1.25;
     }
 
-    .markdown a {
-      color: #7cc4ff;
-      text-decoration: none;
-    }
-
-    .markdown a:hover {
-      text-decoration: underline;
-    }
-
-    .markdown hr {
-      border: none;
-      border-top: 1px solid #2a2a2a;
-      margin: 14px 0;
-    }
-
-    .markdown :not(pre) > code {
-      background: #161616;
-      color: #00ff9c;
+    .markdown code:not(pre code) {
+      background: #181818;
+      color: #d0ffd0;
       padding: 2px 6px;
-      border-radius: 5px;
+      border-radius: 6px;
       font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
       font-size: 0.95em;
     }
 
-    .code-container {
+    .code-wrap {
+      margin: 12px 0;
       position: relative;
-      margin: 10px 0 14px;
     }
 
-    .code-header {
+    .code-head {
       display: flex;
       justify-content: flex-end;
       margin-bottom: 6px;
     }
 
     .copy-btn {
-      background: #1e88e5;
       border: none;
-      color: #fff;
-      font-size: 12px;
-      padding: 5px 10px;
-      border-radius: 6px;
+      background: #1e88e5;
+      color: white;
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-size: 13px;
       cursor: pointer;
     }
 
@@ -165,8 +137,8 @@
       margin: 0;
       background: #000;
       border: 1px solid #1f1f1f;
-      border-radius: 8px;
-      padding: 12px;
+      border-radius: 10px;
+      padding: 14px;
       overflow-x: auto;
     }
 
@@ -179,9 +151,9 @@
     }
 
     #typing {
-      font-size: 13px;
-      color: #888;
       padding: 0 16px 10px;
+      color: #888;
+      font-size: 13px;
       display: none;
     }
 
@@ -191,9 +163,9 @@
       background: #0f0f0f;
     }
 
-    input {
+    #input {
       flex: 1;
-      padding: 12px;
+      padding: 14px;
       border: none;
       outline: none;
       background: #111;
@@ -201,16 +173,17 @@
       font-size: 16px;
     }
 
-    button.send-btn {
-      padding: 12px 16px;
+    #sendBtn {
+      padding: 0 18px;
       border: none;
       background: #1e88e5;
       color: #fff;
-      font-weight: bold;
+      font-weight: 700;
+      font-size: 16px;
       cursor: pointer;
     }
 
-    button.send-btn:hover {
+    #sendBtn:hover {
       background: #1565c0;
     }
   </style>
@@ -229,7 +202,7 @@
 
   <div id="inputBar">
     <input id="input" placeholder="Message TweakBot..." />
-    <button class="send-btn" onclick="handleSend()">Send</button>
+    <button id="sendBtn" type="button">Send</button>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
@@ -245,6 +218,7 @@
 
     const chat = document.getElementById("chat");
     const input = document.getElementById("input");
+    const sendBtn = document.getElementById("sendBtn");
     const typing = document.getElementById("typing");
 
     marked.setOptions({
@@ -252,100 +226,127 @@
       gfm: true
     });
 
-    function escapeHtml(str) {
-      return str
+    function escapeHtml(text) {
+      return text
         .replace(/&/g, "&amp;")
         .replace(/</g, "&lt;")
         .replace(/>/g, "&gt;");
     }
 
+    function renderMarkdown(text) {
+      const raw = marked.parse(text || "");
+      return DOMPurify.sanitize(raw);
+    }
+
     function enhanceCodeBlocks(container) {
-      const pres = container.querySelectorAll("pre");
+      const codeBlocks = container.querySelectorAll("pre");
 
-      pres.forEach((pre) => {
-        if (pre.parentElement?.classList.contains("code-container")) return;
+      codeBlocks.forEach((pre) => {
+        if (pre.parentElement?.classList.contains("code-wrap")) return;
 
-        const wrapper = document.createElement("div");
-        wrapper.className = "code-container";
+        const wrap = document.createElement("div");
+        wrap.className = "code-wrap";
 
-        const header = document.createElement("div");
-        header.className = "code-header";
+        const head = document.createElement("div");
+        head.className = "code-head";
 
-        const btn = document.createElement("button");
-        btn.className = "copy-btn";
-        btn.textContent = "Copy";
+        const button = document.createElement("button");
+        button.className = "copy-btn";
+        button.textContent = "Copy";
 
-        btn.addEventListener("click", async () => {
-          const code = pre.querySelector("code")?.innerText || pre.innerText;
+        button.addEventListener("click", async () => {
+          const text = pre.querySelector("code")?.innerText || pre.innerText;
 
           try {
-            await navigator.clipboard.writeText(code);
-            btn.textContent = "Copied!";
+            await navigator.clipboard.writeText(text);
+            button.textContent = "Copied!";
             setTimeout(() => {
-              btn.textContent = "Copy";
+              button.textContent = "Copy";
             }, 1200);
           } catch {
-            btn.textContent = "Failed";
+            button.textContent = "Failed";
             setTimeout(() => {
-              btn.textContent = "Copy";
+              button.textContent = "Copy";
             }, 1200);
           }
         });
 
-        header.appendChild(btn);
+        head.appendChild(button);
 
-        pre.parentNode.insertBefore(wrapper, pre);
-        wrapper.appendChild(header);
-        wrapper.appendChild(pre);
+        pre.parentNode.insertBefore(wrap, pre);
+        wrap.appendChild(head);
+        wrap.appendChild(pre);
       });
     }
 
-    function renderMarkdown(text) {
-      const rawHtml = marked.parse(text || "");
-      const safeHtml = DOMPurify.sanitize(rawHtml);
-      return safeHtml;
-    }
-
     function addMessage(role, text, name = "TweakBot") {
-      const div = document.createElement("div");
-      div.className = "msg " + role;
+      const msg = document.createElement("div");
+      msg.className = `msg ${role}`;
 
       if (role === "user") {
-        div.textContent = text;
+        msg.textContent = text;
       } else {
-        const safeName = escapeHtml(name);
-        div.innerHTML = `
-          <strong class="sender">${safeName}:</strong>
-          <div class="markdown">${renderMarkdown(text)}</div>
+        const safeText =
+          typeof text === "string" && text.trim().length > 0
+            ? text
+            : "Unknown — requires verified reference.";
+
+        msg.innerHTML = `
+          <span class="sender">${escapeHtml(name)}:</span>
+          <div class="markdown">${renderMarkdown(safeText)}</div>
         `;
-        enhanceCodeBlocks(div);
+
+        enhanceCodeBlocks(msg);
       }
 
-      chat.appendChild(div);
+      chat.appendChild(msg);
       chat.scrollTop = chat.scrollHeight;
+    }
+
+    async function loadHistory() {
+      try {
+        const res = await fetch(`/api/chat/history?sessionId=${encodeURIComponent(sessionId)}`);
+        const data = await res.json();
+
+        if (!data.messages || !Array.isArray(data.messages)) return;
+
+        chat.innerHTML = "";
+
+        for (const msg of data.messages) {
+          if (msg.role === "user") {
+            addMessage("user", msg.content);
+          } else if (msg.role === "assistant") {
+            addMessage("bot", msg.content, "TweakBot");
+          }
+        }
+      } catch (err) {
+        console.error("Failed to load history:", err);
+      }
     }
 
     async function sendMessage(message) {
       typing.style.display = "block";
 
-      const res = await fetch("/api/chat", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          message,
-          sessionId
-        })
-      });
+      try {
+        const res = await fetch("/api/chat", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            message,
+            sessionId
+          })
+        });
 
-      const data = await res.json();
-      typing.style.display = "none";
-
-      return {
-        reply: data.reply,
-        name: data.name || "TweakBot"
-      };
+        const data = await res.json();
+        return {
+          reply: data.reply,
+          name: data.name || "TweakBot"
+        };
+      } finally {
+        typing.style.display = "none";
+      }
     }
 
     async function handleSend() {
@@ -359,16 +360,20 @@
         const { reply, name } = await sendMessage(message);
         addMessage("bot", reply, name);
       } catch (err) {
-        typing.style.display = "none";
+        console.error("Send failed:", err);
         addMessage("bot", "Error contacting TweakBot.");
       }
     }
 
-    input.addEventListener("keydown", (e) => {
-      if (e.key === "Enter") {
+    sendBtn.addEventListener("click", handleSend);
+
+    input.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") {
         handleSend();
       }
     });
+
+    loadHistory();
   </script>
 </body>
 </html>
