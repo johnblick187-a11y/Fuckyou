@@ -305,7 +305,6 @@ function buildReferenceSnippetContext(packageCandidates) {
   return sections.join("\n\n");
 }
 
-// UPDATED: Claude Haiku + no Virginia reference
 async function buildLiveContext(message) {
   const now = new Date();
   const timeZone = "America/New_York";
@@ -350,7 +349,6 @@ async function buildLiveContext(message) {
   };
 }
 
-// UPDATED: Claude Haiku model
 async function callClaude({
   systemPrompt,
   extraSystemMessages = [],
@@ -445,19 +443,56 @@ app.post("/api/chat", async (req, res) => {
     let reply = "Unknown — requires verified reference.";
 
     if (codeRequest) {
-      reply = await callClaude({
-        systemPrompt: SYSTEM_PROMPT,
-        extraSystemMessages: [
-          codingRulesPrompt(),
-          modePrompt,
-          liveContext ? `Live context:\n${liveContext}` : "",
-          referenceContext
-            ? `Reference snippets:\n${referenceContext}\n\nIf reference context and model memory differ, prefer the reference context.`
-            : ""
-        ],
-        history: cleanHistory,
-        userMessage: trimmedMessage
-      });
+      try {
+        reply = await callClaude({
+          systemPrompt: SYSTEM_PROMPT,
+          extraSystemMessages: [
+            codingRulesPrompt(),
+            modePrompt,
+            liveContext ? `Live context:\n${liveContext}` : "",
+            referenceContext
+              ? `Reference snippets:\n${referenceContext}\n\nIf reference context and model memory differ, prefer the reference context.`
+              : ""
+          ],
+          history: cleanHistory,
+          userMessage: trimmedMessage
+        });
+      } catch (err) {
+        console.error("Claude failed, falling back to Groq:", err?.message || err);
+
+        try {
+          const completion = await groq.chat.completions.create({
+            model: "llama-3.1-8b-instant",
+            messages: [
+              { role: "system", content: SYSTEM_PROMPT },
+              { role: "system", content: codingRulesPrompt() },
+              ...(modePrompt ? [{ role: "system", content: modePrompt }] : []),
+              ...(liveContext ? [{ role: "system", content: `Live context:\n${liveContext}` }] : []),
+              ...(referenceContext
+                ? [{
+                    role: "system",
+                    content:
+                      `Reference snippets:\n${referenceContext}\n\n` +
+                      `If reference context and model memory differ, prefer the reference context.`
+                  }]
+                : []),
+              ...cleanHistory,
+              { role: "user", content: trimmedMessage }
+            ]
+          });
+
+          const raw = completion.choices[0]?.message?.content;
+
+          if (typeof raw === "string") {
+            const cleaned = raw.trim();
+            if (cleaned.length > 0) {
+              reply = cleaned;
+            }
+          }
+        } catch (fallbackErr) {
+          console.error("Groq fallback ALSO failed:", fallbackErr?.message || fallbackErr);
+        }
+      }
     } else {
       const completion = await groq.chat.completions.create({
         model: "llama-3.1-8b-instant",
