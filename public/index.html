@@ -1,9 +1,11 @@
+<!-- filename: public/index.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <title>TweakBot</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
   <style>
     body {
       margin: 0;
@@ -22,11 +24,20 @@
       justify-content: space-between;
       align-items: center;
       background: #0f0f0f;
+      gap: 12px;
+    }
+
+    #headerLeft {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
     }
 
     #title {
       font-size: 18px;
       font-weight: bold;
+      white-space: nowrap;
     }
 
     #status {
@@ -35,6 +46,7 @@
       display: flex;
       align-items: center;
       gap: 6px;
+      white-space: nowrap;
     }
 
     #statusDot {
@@ -44,46 +56,74 @@
       background: #4caf50;
     }
 
+    #newChatBtn {
+      border: none;
+      background: #1e88e5;
+      color: #fff;
+      font-size: 13px;
+      font-weight: 600;
+      padding: 8px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    #newChatBtn:hover {
+      background: #1565c0;
+    }
+
     #chat {
       flex: 1;
       overflow-y: auto;
       padding: 16px;
       display: flex;
       flex-direction: column;
-      gap: 16px;
+      gap: 12px;
     }
 
     .msg {
       max-width: 90%;
-      word-wrap: break-word;
       line-height: 1.45;
+      word-wrap: break-word;
     }
 
     .user {
+      color: #ff4d4d;
       align-self: flex-end;
       text-align: right;
-      color: #ff5a5a;
     }
 
     .bot {
+      color: #e8e8e8;
       align-self: flex-start;
-      color: #f3f3f3;
     }
 
-    .sender {
-      display: block;
-      font-weight: 700;
-      margin-bottom: 8px;
+    .bot strong.sender {
       color: #a5d6a7;
     }
 
+    .markdown {
+      margin-top: 6px;
+    }
+
     .markdown p {
-      margin: 0 0 12px;
+      margin: 0 0 10px;
+    }
+
+    .markdown h1,
+    .markdown h2,
+    .markdown h3,
+    .markdown h4,
+    .markdown h5,
+    .markdown h6 {
+      margin: 12px 0 8px;
+      line-height: 1.25;
+      color: #fff;
     }
 
     .markdown ul,
     .markdown ol {
-      margin: 0 0 12px 20px;
+      margin: 8px 0 12px 20px;
       padding: 0;
     }
 
@@ -91,41 +131,56 @@
       margin: 4px 0;
     }
 
-    .markdown h1,
-    .markdown h2,
-    .markdown h3,
-    .markdown h4 {
-      margin: 0 0 12px;
-      line-height: 1.25;
+    .markdown blockquote {
+      margin: 10px 0;
+      padding: 8px 12px;
+      border-left: 3px solid #444;
+      background: #161616;
+      color: #ccc;
     }
 
-    .markdown code:not(pre code) {
-      background: #181818;
-      color: #d0ffd0;
+    .markdown a {
+      color: #7cc4ff;
+      text-decoration: none;
+    }
+
+    .markdown a:hover {
+      text-decoration: underline;
+    }
+
+    .markdown hr {
+      border: none;
+      border-top: 1px solid #2a2a2a;
+      margin: 14px 0;
+    }
+
+    .markdown :not(pre) > code {
+      background: #161616;
+      color: #00ff9c;
       padding: 2px 6px;
-      border-radius: 6px;
+      border-radius: 5px;
       font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
       font-size: 0.95em;
     }
 
-    .code-wrap {
-      margin: 12px 0;
+    .code-container {
       position: relative;
+      margin: 10px 0 14px;
     }
 
-    .code-head {
+    .code-header {
       display: flex;
       justify-content: flex-end;
       margin-bottom: 6px;
     }
 
     .copy-btn {
-      border: none;
       background: #1e88e5;
-      color: white;
-      padding: 8px 12px;
-      border-radius: 8px;
-      font-size: 13px;
+      border: none;
+      color: #fff;
+      font-size: 12px;
+      padding: 5px 10px;
+      border-radius: 6px;
       cursor: pointer;
     }
 
@@ -137,8 +192,8 @@
       margin: 0;
       background: #000;
       border: 1px solid #1f1f1f;
-      border-radius: 10px;
-      padding: 14px;
+      border-radius: 8px;
+      padding: 12px;
       overflow-x: auto;
     }
 
@@ -151,9 +206,9 @@
     }
 
     #typing {
-      padding: 0 16px 10px;
-      color: #888;
       font-size: 13px;
+      color: #888;
+      padding: 0 16px 10px;
       display: none;
     }
 
@@ -163,9 +218,9 @@
       background: #0f0f0f;
     }
 
-    #input {
+    input {
       flex: 1;
-      padding: 14px;
+      padding: 12px;
       border: none;
       outline: none;
       background: #111;
@@ -173,28 +228,31 @@
       font-size: 16px;
     }
 
-    #sendBtn {
-      padding: 0 18px;
+    button.send-btn {
+      padding: 12px 16px;
       border: none;
       background: #1e88e5;
       color: #fff;
-      font-weight: 700;
-      font-size: 16px;
+      font-weight: bold;
       cursor: pointer;
     }
 
-    #sendBtn:hover {
+    button.send-btn:hover {
       background: #1565c0;
     }
   </style>
 </head>
 <body>
   <div id="header">
-    <div id="title">TweakBot</div>
-    <div id="status">
-      <div id="statusDot"></div>
-      <span>Online</span>
+    <div id="headerLeft">
+      <div id="title">TweakBot</div>
+      <div id="status">
+        <div id="statusDot"></div>
+        <span>Online</span>
+      </div>
     </div>
+
+    <button id="newChatBtn" type="button">New Chat</button>
   </div>
 
   <div id="chat"></div>
@@ -202,7 +260,7 @@
 
   <div id="inputBar">
     <input id="input" placeholder="Message TweakBot..." />
-    <button id="sendBtn" type="button">Send</button>
+    <button class="send-btn" onclick="handleSend()">Send</button>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
@@ -218,88 +276,91 @@
 
     const chat = document.getElementById("chat");
     const input = document.getElementById("input");
-    const sendBtn = document.getElementById("sendBtn");
     const typing = document.getElementById("typing");
+    const newChatBtn = document.getElementById("newChatBtn");
 
     marked.setOptions({
       breaks: true,
       gfm: true
     });
 
-    function escapeHtml(text) {
-      return text
+    function escapeHtml(str) {
+      return str
         .replace(/&/g, "&amp;")
         .replace(/</g, "&lt;")
         .replace(/>/g, "&gt;");
     }
 
-    function renderMarkdown(text) {
-      const raw = marked.parse(text || "");
-      return DOMPurify.sanitize(raw);
-    }
-
     function enhanceCodeBlocks(container) {
-      const codeBlocks = container.querySelectorAll("pre");
+      const pres = container.querySelectorAll("pre");
 
-      codeBlocks.forEach((pre) => {
-        if (pre.parentElement?.classList.contains("code-wrap")) return;
+      pres.forEach((pre) => {
+        if (pre.parentElement?.classList.contains("code-container")) return;
 
-        const wrap = document.createElement("div");
-        wrap.className = "code-wrap";
+        const wrapper = document.createElement("div");
+        wrapper.className = "code-container";
 
-        const head = document.createElement("div");
-        head.className = "code-head";
+        const header = document.createElement("div");
+        header.className = "code-header";
 
-        const button = document.createElement("button");
-        button.className = "copy-btn";
-        button.textContent = "Copy";
+        const btn = document.createElement("button");
+        btn.className = "copy-btn";
+        btn.textContent = "Copy";
 
-        button.addEventListener("click", async () => {
-          const text = pre.querySelector("code")?.innerText || pre.innerText;
+        btn.addEventListener("click", async () => {
+          const code = pre.querySelector("code")?.innerText || pre.innerText;
 
           try {
-            await navigator.clipboard.writeText(text);
-            button.textContent = "Copied!";
+            await navigator.clipboard.writeText(code);
+            btn.textContent = "Copied!";
             setTimeout(() => {
-              button.textContent = "Copy";
+              btn.textContent = "Copy";
             }, 1200);
           } catch {
-            button.textContent = "Failed";
+            btn.textContent = "Failed";
             setTimeout(() => {
-              button.textContent = "Copy";
+              btn.textContent = "Copy";
             }, 1200);
           }
         });
 
-        head.appendChild(button);
+        header.appendChild(btn);
 
-        pre.parentNode.insertBefore(wrap, pre);
-        wrap.appendChild(head);
-        wrap.appendChild(pre);
+        pre.parentNode.insertBefore(wrapper, pre);
+        wrapper.appendChild(header);
+        wrapper.appendChild(pre);
       });
     }
 
+    function renderMarkdown(text) {
+      const rawHtml = marked.parse(text || "");
+      const safeHtml = DOMPurify.sanitize(rawHtml);
+      return safeHtml;
+    }
+
     function addMessage(role, text, name = "TweakBot") {
-      const msg = document.createElement("div");
-      msg.className = `msg ${role}`;
+      const div = document.createElement("div");
+      div.className = "msg " + role;
 
       if (role === "user") {
-        msg.textContent = text;
+        div.textContent = text;
       } else {
         const safeText =
           typeof text === "string" && text.trim().length > 0
             ? text
             : "Unknown — requires verified reference.";
 
-        msg.innerHTML = `
-          <span class="sender">${escapeHtml(name)}:</span>
+        const safeName = escapeHtml(name);
+
+        div.innerHTML = `
+          <strong class="sender">${safeName}:</strong>
           <div class="markdown">${renderMarkdown(safeText)}</div>
         `;
 
-        enhanceCodeBlocks(msg);
+        enhanceCodeBlocks(div);
       }
 
-      chat.appendChild(msg);
+      chat.appendChild(div);
       chat.scrollTop = chat.scrollHeight;
     }
 
@@ -324,29 +385,35 @@
       }
     }
 
+    function startNewChat() {
+      sessionId = crypto.randomUUID();
+      localStorage.setItem("tweakbot_session", sessionId);
+      chat.innerHTML = "";
+      input.focus();
+      console.log("New session started:", sessionId);
+    }
+
     async function sendMessage(message) {
       typing.style.display = "block";
 
-      try {
-        const res = await fetch("/api/chat", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            message,
-            sessionId
-          })
-        });
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          message,
+          sessionId
+        })
+      });
 
-        const data = await res.json();
-        return {
-          reply: data.reply,
-          name: data.name || "TweakBot"
-        };
-      } finally {
-        typing.style.display = "none";
-      }
+      const data = await res.json();
+      typing.style.display = "none";
+
+      return {
+        reply: data.reply,
+        name: data.name || "TweakBot"
+      };
     }
 
     async function handleSend() {
@@ -360,15 +427,15 @@
         const { reply, name } = await sendMessage(message);
         addMessage("bot", reply, name);
       } catch (err) {
-        console.error("Send failed:", err);
+        typing.style.display = "none";
         addMessage("bot", "Error contacting TweakBot.");
       }
     }
 
-    sendBtn.addEventListener("click", handleSend);
+    newChatBtn.addEventListener("click", startNewChat);
 
-    input.addEventListener("keydown", (event) => {
-      if (event.key === "Enter") {
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
         handleSend();
       }
     });
