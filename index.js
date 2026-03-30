@@ -25,7 +25,6 @@ const supabase = createClient(
 
 app.use(express.static(path.join(__dirname, "public")));
 
-// ... (PACKAGE_ALIASES and PACKAGE_REFERENCES stay exactly the same)
 const PACKAGE_ALIASES = {
   "discordjs": "discord.js",
   "discord.js": "discord.js",
@@ -140,8 +139,6 @@ export default pool;`
 }`
   }
 };
-
-// ... (all your helper functions stay the same: codingRulesPrompt, forceStepModePrompt, fileModePrompt, debugModePrompt, isCodeRequest, inferMode, extractPackageCandidates, fetchNpmPackageInfo, buildReferenceSnippetContext)
 
 function codingRulesPrompt() {
   return `
@@ -308,25 +305,28 @@ function buildReferenceSnippetContext(packageCandidates) {
   return sections.join("\n\n");
 }
 
-// FIXED: Improved buildLiveContext with clean, model-friendly date format
+// UPDATED: Claude Haiku + no Virginia reference
 async function buildLiveContext(message) {
   const now = new Date();
+  const timeZone = "America/New_York";
 
-  const formattedDate = now.toLocaleDateString('en-US', {
-    weekday: 'long',
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric'
+  const formattedDate = now.toLocaleDateString("en-US", {
+    timeZone,
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric"
   });
 
-  const formattedTime = now.toLocaleTimeString('en-US', {
-    hour: 'numeric',
-    minute: '2-digit',
+  const formattedTime = now.toLocaleTimeString("en-US", {
+    timeZone,
+    hour: "numeric",
+    minute: "2-digit",
     hour12: true,
-    timeZoneName: 'short'
+    timeZoneName: "short"
   });
 
-  let liveContext = `Current real-world date and time: ${formattedDate} at ${formattedTime} (Eastern Time — user is in Virginia, US).`;
+  let liveContext = `Current real-world date and time: ${formattedDate} at ${formattedTime} (Eastern Time).`;
 
   const packageCandidates = extractPackageCandidates(message);
   const packageResults = await Promise.all(
@@ -350,6 +350,7 @@ async function buildLiveContext(message) {
   };
 }
 
+// UPDATED: Claude Haiku model
 async function callClaude({
   systemPrompt,
   extraSystemMessages = [],
@@ -372,7 +373,7 @@ async function callClaude({
   });
 
   const response = await anthropic.messages.create({
-    model: "claude-sonnet-4-6",
+    model: "claude-haiku-4-5",
     max_tokens: 2048,
     system: systemBlocks,
     messages: anthropicMessages
