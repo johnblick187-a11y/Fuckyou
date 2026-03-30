@@ -58,13 +58,11 @@
       word-wrap: break-word;
     }
 
-    /* 🔴 USER TEXT ONLY */
     .user {
       color: #ff4d4d;
       align-self: flex-end;
     }
 
-    /* 🤖 BOT TEXT */
     .bot {
       color: #a5d6a7;
       align-self: flex-start;
@@ -104,6 +102,45 @@
     button:hover {
       background: #1565c0;
     }
+
+    /* 💻 CODE BLOCK STYLE */
+    .code-container {
+      position: relative;
+      margin-top: 8px;
+    }
+
+    pre {
+      background: #000;
+      padding: 12px;
+      border-radius: 6px;
+      overflow-x: auto;
+      margin: 0;
+    }
+
+    code {
+      color: #00ff9c;
+      font-family: monospace;
+      font-size: 13px;
+      white-space: pre;
+    }
+
+    /* 📋 COPY BUTTON */
+    .copy-btn {
+      position: absolute;
+      top: 6px;
+      right: 6px;
+      background: #1e88e5;
+      border: none;
+      color: #fff;
+      font-size: 12px;
+      padding: 4px 8px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    .copy-btn:hover {
+      background: #1565c0;
+    }
   </style>
 </head>
 <body>
@@ -136,6 +173,34 @@
     const input = document.getElementById("input");
     const typing = document.getElementById("typing");
 
+    function escapeHtml(str) {
+      return str
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
+    }
+
+    function renderCodeBlocks(text) {
+      return text.replace(/```(\w+)?\n([\s\S]*?)```/g, (match, lang, code) => {
+        const escaped = escapeHtml(code);
+
+        return `
+          <div class="code-container">
+            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+            <pre><code>${escaped}</code></pre>
+          </div>
+        `;
+      });
+    }
+
+    function copyCode(btn) {
+      const code = btn.nextElementSibling.innerText;
+      navigator.clipboard.writeText(code);
+
+      btn.textContent = "Copied!";
+      setTimeout(() => (btn.textContent = "Copy"), 1200);
+    }
+
     function addMessage(role, text, name = "TweakBot") {
       const div = document.createElement("div");
       div.className = "msg " + role;
@@ -143,7 +208,8 @@
       if (role === "user") {
         div.textContent = text;
       } else {
-        div.innerHTML = `<strong>${name}:</strong> ${text}`;
+        const formatted = renderCodeBlocks(text);
+        div.innerHTML = `<strong>${name}:</strong><br>${formatted}`;
       }
 
       chat.appendChild(div);
