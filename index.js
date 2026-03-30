@@ -3,7 +3,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import Groq from "groq-sdk";
 import { createClient } from "@supabase/supabase-js";
-import SYSTEM_PROMPT from "./systemprompt.js"; // ✅ using external prompt
+import SYSTEM_PROMPT from "./systemprompt.js";
 
 const app = express();
 app.use(express.json());
@@ -34,7 +34,6 @@ app.post("/api/chat", async (req, res) => {
       return res.status(400).json({ error: "No message provided" });
     }
 
-    // Load history
     const { data: history, error: historyError } = await supabase
       .from("messages")
       .select("role, content")
@@ -46,14 +45,12 @@ app.post("/api/chat", async (req, res) => {
       console.error("History load error:", historyError);
     }
 
-    // Save user message
     await supabase.from("messages").insert({
       session_id: sessionId,
       role: "user",
       content: trimmedMessage
     });
 
-    // Clean history (prevent system contamination)
     const cleanHistory = (history || []).filter(
       (msg) =>
         msg &&
@@ -70,15 +67,22 @@ app.post("/api/chat", async (req, res) => {
       ]
     });
 
-    const reply =
-      completion.choices[0]?.message?.content?.trim() || "No response";
+    const raw = completion.choices[0]?.message?.content;
 
-    // Save assistant reply
-    await supabase.from("messages").insert({
+    const reply =
+      raw && raw.trim().length > 0
+        ? raw
+        : "Unknown implementation — requires verified reference.";
+
+    const { error: assistantInsertError } = await supabase.from("messages").insert({
       session_id: sessionId,
       role: "assistant",
       content: reply
     });
+
+    if (assistantInsertError) {
+      console.error("Assistant message save error:", assistantInsertError);
+    }
 
     return res.json({
       reply,
