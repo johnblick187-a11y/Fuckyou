@@ -15,6 +15,35 @@
       height: 100vh;
     }
 
+    #header {
+      padding: 14px 16px;
+      border-bottom: 1px solid #222;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #0f0f0f;
+    }
+
+    #title {
+      font-size: 18px;
+      font-weight: bold;
+    }
+
+    #status {
+      font-size: 12px;
+      color: #aaa;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    #statusDot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #4caf50;
+    }
+
     #chat {
       flex: 1;
       overflow-y: auto;
@@ -32,6 +61,13 @@
 
     .bot {
       color: #a5d6a7;
+    }
+
+    #typing {
+      font-size: 13px;
+      color: #888;
+      padding-left: 16px;
+      display: none;
     }
 
     #inputBar {
@@ -65,7 +101,16 @@
 </head>
 <body>
 
+  <div id="header">
+    <div id="title">TweakBot</div>
+    <div id="status">
+      <div id="statusDot"></div>
+      <span>Online</span>
+    </div>
+  </div>
+
   <div id="chat"></div>
+  <div id="typing">TweakBot is typing...</div>
 
   <div id="inputBar">
     <input id="input" placeholder="Message TweakBot..." />
@@ -83,16 +128,22 @@
 
     const chat = document.getElementById("chat");
     const input = document.getElementById("input");
+    const typing = document.getElementById("typing");
 
-    function addMessage(role, text) {
+    function addMessage(role, text, name = "TweakBot") {
       const div = document.createElement("div");
       div.className = "msg " + role;
-      div.textContent = (role === "user" ? "You: " : "TweakBot: ") + text;
+
+      const label = role === "user" ? "You" : name;
+      div.innerHTML = `<strong>${label}:</strong> ${text}`;
+
       chat.appendChild(div);
       chat.scrollTop = chat.scrollHeight;
     }
 
     async function sendMessage(message) {
+      typing.style.display = "block";
+
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: {
@@ -105,7 +156,12 @@
       });
 
       const data = await res.json();
-      return data.reply;
+      typing.style.display = "none";
+
+      return {
+        reply: data.reply,
+        name: data.name || "TweakBot"
+      };
     }
 
     async function handleSend() {
@@ -116,14 +172,14 @@
       input.value = "";
 
       try {
-        const reply = await sendMessage(message);
-        addMessage("bot", reply);
+        const { reply, name } = await sendMessage(message);
+        addMessage("bot", reply, name);
       } catch (err) {
+        typing.style.display = "none";
         addMessage("bot", "Error contacting TweakBot.");
       }
     }
 
-    // Enter key support
     input.addEventListener("keydown", (e) => {
       if (e.key === "Enter") {
         handleSend();
