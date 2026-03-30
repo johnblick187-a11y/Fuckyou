@@ -79,12 +79,19 @@
 <div id="chat"></div>
 
 <div id="inputBar">
-  <input id="msg" placeholder="Type a message..." />
+  <input id="msg" placeholder="Type a message..." onkeydown="if(event.key==='Enter') send()" />
   <button onclick="send()">Send</button>
 </div>
 
 <script>
   const chat = document.getElementById("chat");
+
+  // Generate or load a persistent session ID
+  let sessionId = localStorage.getItem("tweakbot_session");
+  if (!sessionId) {
+    sessionId = crypto.randomUUID();
+    localStorage.setItem("tweakbot_session", sessionId);
+  }
 
   function addMessage(text, role) {
     const div = document.createElement("div");
@@ -101,20 +108,16 @@
 
     addMessage(message, "user");
     input.value = "";
-
     addMessage("...", "ai");
 
     try {
       const res = await fetch("/api/chat", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ message })
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message, sessionId })
       });
 
       const data = await res.json();
-
       chat.lastChild.innerText = data.reply || "No response";
     } catch (err) {
       chat.lastChild.innerText = "Error talking to TweakBot";
