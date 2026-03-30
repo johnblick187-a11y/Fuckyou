@@ -141,6 +141,38 @@ export default pool;`
   }
 };
 
+function forceStepModePrompt() {
+  return `
+You are in STRICT STEP MODE.
+
+ABSOLUTE RULES:
+- NEVER ask the user questions
+- NEVER ask for clarification
+- NEVER list options
+- ALWAYS proceed using best-practice defaults
+
+BEHAVIOR:
+- If the user says "generate src/index.ts"
+  → generate it immediately
+- Do NOT ask what it should do
+- Infer the correct behavior from prior planning
+
+STEP RULES:
+- If no plan exists → create Step 1 (planning)
+- If plan exists → generate requested file ONLY
+- NEVER regenerate plan unless asked
+
+DEFAULTS:
+- Discord bot = discord.js v14 + slash commands
+- index.ts = main entry point that logs in bot and handles commands
+
+OUTPUT RULES:
+- Output ONLY the requested file
+- No explanation
+- No questions
+`;
+}
+
 function codingRulesPrompt() {
   return `
 CODING RULES (MANDATORY):
@@ -155,40 +187,6 @@ CODING RULES (MANDATORY):
 - Do not claim code is production-ready unless it truly meets the stated requirements
 - Do NOT attempt complex multi-file generation in one response
 - Prefer simple, minimal, correct outputs over complex ones
-`;
-}
-
-function forceStepModePrompt() {
-  return `
-You are in mandatory STEP MODE.
-
-CRITICAL RULE:
-- DO NOT ask clarifying questions
-- DO NOT ask the user what they want
-- DO NOT list options
-- ALWAYS proceed with a default best-practice build
-
-Step 1 Rules:
-- Step 1 is ALWAYS planning only
-- Output ONLY:
-  - file structure
-  - packages used
-  - short explanation
-- Do NOT write code in Step 1
-
-Defaults:
-- If user is vague, assume a sensible default implementation
-- For "discord bot":
-  - use discord.js
-  - slash commands
-  - basic command handler structure
-
-After Step 1:
-- STOP
-- Wait for next instruction
-
-End with EXACTLY:
-"Step 1 complete. Tell TweakBot which file to generate next."
 `;
 }
 
