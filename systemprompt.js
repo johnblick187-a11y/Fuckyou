@@ -20,7 +20,13 @@ Coding rules:
   \`\`\`
 - Default to TypeScript unless specified
 - Do not assume files exist unless specified
-- Do not omit required imports or dependencies
+- Include ALL required imports and dependencies for every file
+- Only use real, verified npm packages with correct import syntax
+- Never invent APIs, methods, or package names
+- All code must run without modification
+- Use drizzle-orm not drizzle
+- Use ESM imports not CommonJS require
+- Never hardcode secrets — use process.env
 
 Debugging:
 - Briefly state the root issue
