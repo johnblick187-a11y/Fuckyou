@@ -38,6 +38,7 @@ const PACKAGE_ALIASES = {
   "zod": "zod",
   "jsonwebtoken": "jsonwebtoken",
   "bcrypt": "bcrypt",
+  "bcryptjs": "bcryptjs",
   "dotenv": "dotenv",
   "mongoose": "mongoose",
   "prisma": "prisma",
@@ -161,17 +162,32 @@ function forceStepModePrompt() {
   return `
 You are in mandatory STEP MODE.
 
-Rules:
-- For any build, feature, or multi-file coding request, Step 1 is always planning only
-- In Step 1, output ONLY:
+CRITICAL RULE:
+- DO NOT ask clarifying questions
+- DO NOT ask the user what they want
+- DO NOT list options
+- ALWAYS proceed with a default best-practice build
+
+Step 1 Rules:
+- Step 1 is ALWAYS planning only
+- Output ONLY:
   - file structure
   - packages used
   - short explanation
 - Do NOT write code in Step 1
-- After Step 1, stop and wait for the next instruction
-- After planning, generate only ONE file at a time
-- Never generate multiple files unless explicitly requested
-- End planning responses with exactly:
+
+Defaults:
+- If user is vague, assume a sensible default implementation
+- For "discord bot":
+  - use discord.js
+  - slash commands
+  - basic command handler structure
+
+After Step 1:
+- STOP
+- Wait for next instruction
+
+End with EXACTLY:
 "Step 1 complete. Tell TweakBot which file to generate next."
 `;
 }
@@ -183,8 +199,10 @@ You are in FILE MODE.
 Rules:
 - Generate ONLY the single requested file
 - Do not generate any other files
+- Do not describe other files
+- Do not plan additional steps
+- Output only the requested full file
 - Follow all coding rules exactly
-- Output the file in a single proper code block
 `;
 }
 
@@ -204,10 +222,33 @@ function isCodeRequest(message) {
   const text = message.toLowerCase();
 
   const signals = [
-    "build", "create", "make", "generate", "scaffold", "fix", "refactor",
-    "write code", "api", "bot", "discord", "express", "route", "middleware",
-    "database", "schema", "typescript", "javascript", "node", "function",
-    "class", "component", "file", "bug"
+    "build",
+    "create",
+    "make",
+    "generate",
+    "scaffold",
+    "fix",
+    "refactor",
+    "write code",
+    "api",
+    "bot",
+    "discord",
+    "express",
+    "route",
+    "middleware",
+    "database",
+    "schema",
+    "typescript",
+    "javascript",
+    "node",
+    "function",
+    "class",
+    "component",
+    "file",
+    "bug",
+    "how do i make",
+    "how to make",
+    "how do i build"
   ];
 
   return signals.some((phrase) => text.includes(phrase));
@@ -217,16 +258,26 @@ function inferMode(message) {
   const text = message.toLowerCase();
 
   if (
-    text.includes("fix ") || text.includes("debug ") ||
-    text.includes("error") || text.includes("bug") || text.includes("broken")
+    text.includes("fix ") ||
+    text.includes("debug ") ||
+    text.includes("error") ||
+    text.includes("bug") ||
+    text.includes("broken")
   ) {
     return "debug";
   }
 
   if (
-    text.includes("generate only") || text.includes("only this file") ||
-    text.includes("only the file") || text.includes("src/") ||
-    text.includes(".ts") || text.includes(".js") || text.includes(".json")
+    text.includes("generate only") ||
+    text.includes("only this file") ||
+    text.includes("only the file") ||
+    text.includes("rewrite only") ||
+    text.includes("fix only this file") ||
+    text.includes("src/") ||
+    text.includes(".ts") ||
+    text.includes(".js") ||
+    text.includes(".json") ||
+    text.includes(".html")
   ) {
     return "file";
   }
@@ -256,9 +307,7 @@ function extractPackageCandidates(message) {
 
 async function fetchNpmPackageInfo(pkgName) {
   try {
-    const response = await fetch(
-      `https://registry.npmjs.org/${encodeURIComponent(pkgName)}`
-    );
+    const response = await fetch(`https://registry.npmjs.org/${encodeURIComponent(pkgName)}`);
 
     if (!response.ok) {
       return { name: pkgName, found: false };
@@ -371,7 +420,7 @@ async function callClaude({
   });
 
   const response = await anthropic.messages.create({
-    model: "claude-haiku-4-5-20251001",
+    model: "claude-haiku-4-5",
     max_tokens: 2048,
     system: systemBlocks,
     messages: anthropicMessages
@@ -385,6 +434,28 @@ async function callClaude({
 
   return text || "Unknown — requires verified reference.";
 }
+
+app.get("/api/chat/history", async (req, res) => {
+  try {
+    const sessionId = String(req.query.sessionId || "default");
+
+    const { data, error } = await supabase
+      .from("messages")
+      .select("role, content")
+      .eq("session_id", sessionId)
+      .order("created_at", { ascending: true });
+
+    if (error) {
+      console.error("History fetch error:", error);
+      return res.status(500).json({ error: "Failed to load chat history" });
+    }
+
+    return res.json({ messages: data || [] });
+  } catch (err) {
+    console.error("History route error:", err);
+    return res.status(500).json({ error: "Failed to load chat history" });
+  }
+});
 
 app.post("/api/chat", async (req, res) => {
   try {
@@ -414,11 +485,15 @@ app.post("/api/chat", async (req, res) => {
       console.error("History load error:", historyError);
     }
 
-    await supabase.from("messages").insert({
+    const { error: userInsertError } = await supabase.from("messages").insert({
       session_id: sessionId,
       role: "user",
       content: trimmedMessage
     });
+
+    if (userInsertError) {
+      console.error("User message save error:", userInsertError);
+    }
 
     const cleanHistory = (history || []).filter(
       (msg) =>
@@ -441,8 +516,11 @@ app.post("/api/chat", async (req, res) => {
     const referenceContext = buildReferenceSnippetContext(packageCandidates);
 
     let reply = "Unknown — requires verified reference.";
+    let provider = "groq";
 
     if (codeRequest) {
+      provider = "anthropic";
+
       try {
         reply = await callClaude({
           systemPrompt: SYSTEM_PROMPT,
@@ -459,6 +537,7 @@ app.post("/api/chat", async (req, res) => {
         });
       } catch (err) {
         console.error("Claude failed, falling back to Groq:", err?.message || err);
+        provider = "groq-fallback";
 
         try {
           const completion = await groq.chat.completions.create({
@@ -530,7 +609,7 @@ app.post("/api/chat", async (req, res) => {
       reply,
       name: "TweakBot",
       mode: effectiveMode,
-      provider: codeRequest ? "anthropic" : "groq"
+      provider
     });
   } catch (err) {
     console.error("TweakBot error:", err);
