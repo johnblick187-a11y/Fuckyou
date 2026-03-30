@@ -1,7 +1,9 @@
+// filename: index.js
 import express from "express";
 import path from "path";
 import { fileURLToPath } from "url";
 import Groq from "groq-sdk";
+import Anthropic from "@anthropic-ai/sdk";
 import { createClient } from "@supabase/supabase-js";
 import SYSTEM_PROMPT from "./systemprompt.js";
 
@@ -13,6 +15,10 @@ const PORT = process.env.PORT || 3000;
 
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
+const anthropic = new Anthropic({
+  apiKey: process.env.ANTHROPIC_API_KEY
+});
+
 const supabase = createClient(
   process.env.SUPABASE_URL || "",
   process.env.SUPABASE_ANON_KEY || ""
@@ -20,6 +26,7 @@ const supabase = createClient(
 
 app.use(express.static(path.join(__dirname, "public")));
 
+// ... (PACKAGE_ALIASES and PACKAGE_REFERENCES stay exactly the same)
 const PACKAGE_ALIASES = {
   "discordjs": "discord.js",
   "discord.js": "discord.js",
@@ -135,6 +142,8 @@ export default pool;`
   }
 };
 
+// ... (all your helper functions stay the same: codingRulesPrompt, forceStepModePrompt, fileModePrompt, debugModePrompt, isCodeRequest, inferMode, extractPackageCandidates, fetchNpmPackageInfo, buildReferenceSnippetContext)
+
 function codingRulesPrompt() {
   return `
 CODING RULES (MANDATORY):
@@ -199,30 +208,10 @@ function isCodeRequest(message) {
   const text = message.toLowerCase();
 
   const signals = [
-    "build",
-    "create",
-    "make",
-    "generate",
-    "scaffold",
-    "fix",
-    "refactor",
-    "write code",
-    "api",
-    "bot",
-    "discord",
-    "express",
-    "route",
-    "middleware",
-    "database",
-    "schema",
-    "typescript",
-    "javascript",
-    "node",
-    "function",
-    "class",
-    "component",
-    "file",
-    "bug"
+    "build", "create", "make", "generate", "scaffold", "fix", "refactor",
+    "write code", "api", "bot", "discord", "express", "route", "middleware",
+    "database", "schema", "typescript", "javascript", "node", "function",
+    "class", "component", "file", "bug"
   ];
 
   return signals.some((phrase) => text.includes(phrase));
@@ -232,23 +221,16 @@ function inferMode(message) {
   const text = message.toLowerCase();
 
   if (
-    text.includes("fix ") ||
-    text.includes("debug ") ||
-    text.includes("error") ||
-    text.includes("bug") ||
-    text.includes("broken")
+    text.includes("fix ") || text.includes("debug ") ||
+    text.includes("error") || text.includes("bug") || text.includes("broken")
   ) {
     return "debug";
   }
 
   if (
-    text.includes("generate only") ||
-    text.includes("only this file") ||
-    text.includes("only the file") ||
-    text.includes("src/") ||
-    text.includes(".ts") ||
-    text.includes(".js") ||
-    text.includes(".json")
+    text.includes("generate only") || text.includes("only this file") ||
+    text.includes("only the file") || text.includes("src/") ||
+    text.includes(".ts") || text.includes(".js") || text.includes(".json")
   ) {
     return "file";
   }
@@ -283,10 +265,7 @@ async function fetchNpmPackageInfo(pkgName) {
     );
 
     if (!response.ok) {
-      return {
-        name: pkgName,
-        found: false
-      };
+      return { name: pkgName, found: false };
     }
 
     const data = await response.json();
@@ -300,10 +279,7 @@ async function fetchNpmPackageInfo(pkgName) {
     };
   } catch (error) {
     console.error(`npm lookup failed for ${pkgName}:`, error);
-    return {
-      name: pkgName,
-      found: false
-    };
+    return { name: pkgName, found: false };
   }
 }
 
@@ -333,19 +309,33 @@ function buildReferenceSnippetContext(packageCandidates) {
   return sections.join("\n\n");
 }
 
+// FIXED: Improved buildLiveContext with clean, model-friendly date format
 async function buildLiveContext(message) {
-  const now = new Date().toString();
-  const packageCandidates = extractPackageCandidates(message);
+  const now = new Date();
 
+  const formattedDate = now.toLocaleDateString('en-US', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  });
+
+  const formattedTime = now.toLocaleTimeString('en-US', {
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+    timeZoneName: 'short'
+  });
+
+  let liveContext = `Current real-world date and time: ${formattedDate} at ${formattedTime} (Eastern Time — user is in Virginia, US).`;
+
+  const packageCandidates = extractPackageCandidates(message);
   const packageResults = await Promise.all(
     packageCandidates.map(fetchNpmPackageInfo)
   );
 
-  let liveContext = `Current server date/time: ${now}\n`;
-
   if (packageResults.length > 0) {
-    liveContext += `\nLive npm package info:\n`;
-
+    liveContext += `\n\nLive npm package info:\n`;
     for (const pkg of packageResults) {
       if (pkg.found) {
         liveContext += `- ${pkg.name}: latest=${pkg.latest}; description=${pkg.description}\n`;
@@ -359,6 +349,43 @@ async function buildLiveContext(message) {
     liveContext: liveContext.trim(),
     packageCandidates
   };
+}
+
+async function callClaude({
+  systemPrompt,
+  extraSystemMessages = [],
+  history = [],
+  userMessage
+}) {
+  const systemBlocks = [
+    systemPrompt,
+    ...extraSystemMessages.filter(Boolean)
+  ].join("\n\n");
+
+  const anthropicMessages = history.map((msg) => ({
+    role: msg.role,
+    content: msg.content
+  }));
+
+  anthropicMessages.push({
+    role: "user",
+    content: userMessage
+  });
+
+  const response = await anthropic.messages.create({
+    model: "claude-sonnet-4-6",
+    max_tokens: 2048,
+    system: systemBlocks,
+    messages: anthropicMessages
+  });
+
+  const text = response.content
+    ?.filter((block) => block.type === "text")
+    .map((block) => block.text)
+    .join("\n")
+    .trim();
+
+  return text || "Unknown — requires verified reference.";
 }
 
 app.post("/api/chat", async (req, res) => {
@@ -415,42 +442,42 @@ app.post("/api/chat", async (req, res) => {
     const { liveContext, packageCandidates } = await buildLiveContext(trimmedMessage);
     const referenceContext = buildReferenceSnippetContext(packageCandidates);
 
-    const completion = await groq.chat.completions.create({
-      model: "llama-3.1-8b-instant",
-      messages: [
-        { role: "system", content: SYSTEM_PROMPT },
-        ...(codeRequest
-          ? [{ role: "system", content: codingRulesPrompt() }]
-          : []),
-        ...(modePrompt
-          ? [{ role: "system", content: modePrompt }]
-          : []),
-        ...(liveContext
-          ? [{ role: "system", content: `Live context:\n${liveContext}` }]
-          : []),
-        ...(referenceContext
-          ? [
-              {
-                role: "system",
-                content:
-                  `Reference snippets:\n${referenceContext}\n\n` +
-                  `If reference context and model memory differ, prefer the reference context.`
-              }
-            ]
-          : []),
-        ...cleanHistory,
-        { role: "user", content: trimmedMessage }
-      ]
-    });
-
-    const raw = completion.choices[0]?.message?.content;
-
     let reply = "Unknown — requires verified reference.";
 
-    if (typeof raw === "string") {
-      const cleaned = raw.trim();
-      if (cleaned.length > 0) {
-        reply = cleaned;
+    if (codeRequest) {
+      reply = await callClaude({
+        systemPrompt: SYSTEM_PROMPT,
+        extraSystemMessages: [
+          codingRulesPrompt(),
+          modePrompt,
+          liveContext ? `Live context:\n${liveContext}` : "",
+          referenceContext
+            ? `Reference snippets:\n${referenceContext}\n\nIf reference context and model memory differ, prefer the reference context.`
+            : ""
+        ],
+        history: cleanHistory,
+        userMessage: trimmedMessage
+      });
+    } else {
+      const completion = await groq.chat.completions.create({
+        model: "llama-3.1-8b-instant",
+        messages: [
+          { role: "system", content: SYSTEM_PROMPT },
+          ...(liveContext
+            ? [{ role: "system", content: `Live context:\n${liveContext}` }]
+            : []),
+          ...cleanHistory,
+          { role: "user", content: trimmedMessage }
+        ]
+      });
+
+      const raw = completion.choices[0]?.message?.content;
+
+      if (typeof raw === "string") {
+        const cleaned = raw.trim();
+        if (cleaned.length > 0) {
+          reply = cleaned;
+        }
       }
     }
 
@@ -467,7 +494,8 @@ app.post("/api/chat", async (req, res) => {
     return res.json({
       reply,
       name: "TweakBot",
-      mode: effectiveMode
+      mode: effectiveMode,
+      provider: codeRequest ? "anthropic" : "groq"
     });
   } catch (err) {
     console.error("TweakBot error:", err);
