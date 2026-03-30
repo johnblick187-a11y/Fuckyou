@@ -20,9 +20,6 @@ const supabase = createClient(
 
 app.use(express.static(path.join(__dirname, "public")));
 
-/**
- * Package aliases / known package names
- */
 const PACKAGE_ALIASES = {
   "discordjs": "discord.js",
   "discord.js": "discord.js",
@@ -46,11 +43,6 @@ const PACKAGE_ALIASES = {
   "vite": "vite"
 };
 
-/**
- * Known-good local reference snippets.
- * These are intentionally small, conservative, and easy for the model to adapt.
- * Keep these updated over time as your trusted examples improve.
- */
 const PACKAGE_REFERENCES = {
   "discord.js": {
     notes: [
@@ -76,7 +68,7 @@ client.login(process.env.BOT_TOKEN);`
     notes: [
       "Use express.json() for JSON body parsing.",
       "Use process.env.PORT for deployment compatibility.",
-      "Keep one app.listen call only."
+      "Call app.listen only once."
     ],
     install: "npm install express",
     snippet: `import express from "express";
@@ -117,15 +109,15 @@ export default pool;`
       "Use reference-based generation when possible."
     ],
     install: "npm install drizzle-orm pg",
-    snippet: `// Use the official Node/PostgreSQL adapter pattern from verified reference.
-// If exact Drizzle setup is uncertain, respond:
-// "Unknown database implementation — requires verified reference."`
+    snippet: `// Use only verified Drizzle setup.
+// If exact Drizzle adapter or import path is uncertain, respond:
+// "Unknown — requires verified reference."`
   },
 
   "typescript": {
     notes: [
       "Do not assume Node runs .ts files directly without tsx, ts-node, or a build step.",
-      "Prefer ESM-friendly tsconfig when targeting modern Node."
+      "Prefer modern ESM-friendly tsconfig for Node 20+."
     ],
     install: "npm install -D typescript @types/node",
     snippet: `{
@@ -140,48 +132,129 @@ export default pool;`
   },
   "include": ["src"]
 }`
-  },
-
-  "jsonwebtoken": {
-    notes: [
-      "Do not hardcode JWT secrets.",
-      "Use process.env.JWT_SECRET."
-    ],
-    install: "npm install jsonwebtoken",
-    snippet: `import jwt from "jsonwebtoken";
-
-const token = jwt.sign(
-  { sub: userId },
-  process.env.JWT_SECRET,
-  { expiresIn: "1h" }
-);`
-  },
-
-  "bcrypt": {
-    notes: [
-      "Use bcrypt for password hashing.",
-      "Never store plaintext passwords."
-    ],
-    install: "npm install bcrypt",
-    snippet: `import bcrypt from "bcrypt";
-
-const hash = await bcrypt.hash(password, 10);
-const valid = await bcrypt.compare(password, hash);`
-  },
-
-  "zod": {
-    notes: [
-      "Use Zod for request validation when schema validation is needed."
-    ],
-    install: "npm install zod",
-    snippet: `import { z } from "zod";
-
-const userSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(8)
-});`
   }
 };
+
+function codingRulesPrompt() {
+  return `
+CODING RULES (MANDATORY):
+- Complete files only, no partial snippets, unless explicitly asked
+- Each file must be in its own code block with the correct language tag
+- First line inside each file must be: // filename: <name>
+- Default to TypeScript unless told otherwise
+- Use ESM imports, not CommonJS, unless explicitly requested
+- Include all required imports and dependencies
+- Never hardcode secrets, tokens, passwords, or database URLs — use process.env
+- Match the user's existing stack and structure when modifying code
+- Do not claim code is production-ready unless it truly meets the stated requirements
+- Do NOT attempt complex multi-file generation in one response
+- Prefer simple, minimal, correct outputs over complex ones
+`;
+}
+
+function forceStepModePrompt() {
+  return `
+You are in mandatory STEP MODE.
+
+Rules:
+- For any build, feature, or multi-file coding request, Step 1 is always planning only
+- In Step 1, output ONLY:
+  - file structure
+  - packages used
+  - short explanation
+- Do NOT write code in Step 1
+- After Step 1, stop and wait for the next instruction
+- After planning, generate only ONE file at a time
+- Never generate multiple files unless explicitly requested
+- End planning responses with exactly:
+"Step 1 complete. Tell TweakBot which file to generate next."
+`;
+}
+
+function fileModePrompt() {
+  return `
+You are in FILE MODE.
+
+Rules:
+- Generate ONLY the single requested file
+- Do not generate any other files
+- Follow all coding rules exactly
+- Output the file in a single proper code block
+`;
+}
+
+function debugModePrompt() {
+  return `
+You are in DEBUG MODE.
+
+Rules:
+- State the root issue briefly
+- Then provide the corrected full file
+- Prefer fixing the user's existing structure over rewriting everything
+- Follow all coding rules exactly
+`;
+}
+
+function isCodeRequest(message) {
+  const text = message.toLowerCase();
+
+  const signals = [
+    "build",
+    "create",
+    "make",
+    "generate",
+    "scaffold",
+    "fix",
+    "refactor",
+    "write code",
+    "api",
+    "bot",
+    "discord",
+    "express",
+    "route",
+    "middleware",
+    "database",
+    "schema",
+    "typescript",
+    "javascript",
+    "node",
+    "function",
+    "class",
+    "component",
+    "file",
+    "bug"
+  ];
+
+  return signals.some((phrase) => text.includes(phrase));
+}
+
+function inferMode(message) {
+  const text = message.toLowerCase();
+
+  if (
+    text.includes("fix ") ||
+    text.includes("debug ") ||
+    text.includes("error") ||
+    text.includes("bug") ||
+    text.includes("broken")
+  ) {
+    return "debug";
+  }
+
+  if (
+    text.includes("generate only") ||
+    text.includes("only this file") ||
+    text.includes("only the file") ||
+    text.includes("src/") ||
+    text.includes(".ts") ||
+    text.includes(".js") ||
+    text.includes(".json")
+  ) {
+    return "file";
+  }
+
+  return "plan";
+}
 
 function extractPackageCandidates(message) {
   const lower = message.toLowerCase();
@@ -199,9 +272,6 @@ function extractPackageCandidates(message) {
   if (lower.includes("postgres") || lower.includes("postgresql")) found.add("pg");
   if (lower.includes("express")) found.add("express");
   if (lower.includes("typescript")) found.add("typescript");
-  if (lower.includes("jwt")) found.add("jsonwebtoken");
-  if (lower.includes("bcrypt")) found.add("bcrypt");
-  if (lower.includes("zod")) found.add("zod");
 
   return [...found];
 }
@@ -293,7 +363,7 @@ async function buildLiveContext(message) {
 
 app.post("/api/chat", async (req, res) => {
   try {
-    const { message, sessionId = "default", mode = "chat" } = req.body;
+    const { message, sessionId = "default" } = req.body;
 
     if (!message || typeof message !== "string") {
       return res.status(400).json({ error: "No message provided" });
@@ -304,6 +374,9 @@ app.post("/api/chat", async (req, res) => {
     if (!trimmedMessage) {
       return res.status(400).json({ error: "No message provided" });
     }
+
+    const codeRequest = isCodeRequest(trimmedMessage);
+    const effectiveMode = codeRequest ? inferMode(trimmedMessage) : "chat";
 
     const { data: history, error: historyError } = await supabase
       .from("messages")
@@ -331,27 +404,12 @@ app.post("/api/chat", async (req, res) => {
 
     let modePrompt = "";
 
-    if (mode === "plan") {
-      modePrompt = `
-You are in PLAN MODE.
-Output ONLY:
-- file structure
-- packages used
-- short explanation
-NO code.
-`;
-    } else if (mode === "file") {
-      modePrompt = `
-You are in FILE MODE.
-Generate ONLY the requested file.
-Do not generate any other files.
-`;
-    } else if (mode === "debug") {
-      modePrompt = `
-You are in DEBUG MODE.
-State the root issue briefly.
-Then provide the corrected full file.
-`;
+    if (effectiveMode === "plan") {
+      modePrompt = forceStepModePrompt();
+    } else if (effectiveMode === "file") {
+      modePrompt = fileModePrompt();
+    } else if (effectiveMode === "debug") {
+      modePrompt = debugModePrompt();
     }
 
     const { liveContext, packageCandidates } = await buildLiveContext(trimmedMessage);
@@ -361,24 +419,25 @@ Then provide the corrected full file.
       model: "llama-3.1-8b-instant",
       messages: [
         { role: "system", content: SYSTEM_PROMPT },
-
+        ...(codeRequest
+          ? [{ role: "system", content: codingRulesPrompt() }]
+          : []),
         ...(modePrompt
           ? [{ role: "system", content: modePrompt }]
           : []),
-
         ...(liveContext
           ? [{ role: "system", content: `Live context:\n${liveContext}` }]
           : []),
-
         ...(referenceContext
           ? [
               {
                 role: "system",
-                content: `Reference snippets:\n${referenceContext}\n\nIf reference context and model memory differ, prefer the reference context.`
+                content:
+                  `Reference snippets:\n${referenceContext}\n\n` +
+                  `If reference context and model memory differ, prefer the reference context.`
               }
             ]
           : []),
-
         ...cleanHistory,
         { role: "user", content: trimmedMessage }
       ]
@@ -407,7 +466,8 @@ Then provide the corrected full file.
 
     return res.json({
       reply,
-      name: "TweakBot"
+      name: "TweakBot",
+      mode: effectiveMode
     });
   } catch (err) {
     console.error("TweakBot error:", err);
