@@ -1,3 +1,4 @@
+// filename: index.js
 import express from "express";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -275,7 +276,8 @@ function inferMode(message) {
     text.includes(".ts") ||
     text.includes(".js") ||
     text.includes(".json") ||
-    text.includes(".html")
+    text.includes(".html") ||
+    text.includes(".env")
   ) {
     return "file";
   }
@@ -396,14 +398,80 @@ async function buildLiveContext(message) {
   };
 }
 
+// 🔥 NEW: auto-detect project type for .env generation
+function detectProjectType(message, history) {
+  const text = (message + " " + history.map((m) => m.content).join(" ")).toLowerCase();
+
+  if (text.includes("discord") || text.includes("bot_token") || text.includes("slash command")) {
+    return "discord";
+  }
+
+  if (text.includes("express") || text.includes("api") || text.includes("jwt") || text.includes("postgres")) {
+    return "api";
+  }
+
+  if (text.includes("react") || text.includes("frontend") || text.includes("vite")) {
+    return "frontend";
+  }
+
+  return "generic";
+}
+
+// 🔥 NEW: .env templates by project type
+function getEnvTemplate(type) {
+  switch (type) {
+    case "discord":
+      return `BOT_TOKEN=
+CLIENT_ID=
+GUILD_ID=
+GROQ_API_KEY=
+OWNER_ID=`;
+
+    case "api":
+      return `DATABASE_URL=
+JWT_SECRET=
+PORT=3000`;
+
+    case "frontend":
+      return `VITE_API_URL=
+VITE_APP_ENV=development`;
+
+    default:
+      return `# Add your environment variables here`;
+  }
+}
+
+// 🔥 NEW: summarize older messages so long chats stay stable
+async function summarizeMessages(messages) {
+  const text = messages.map((m) => `${m.role}: ${m.content}`).join("\n");
+
+  const completion = await groq.chat.completions.create({
+    model: "llama-3.1-8b-instant",
+    messages: [
+      {
+        role: "system",
+        content: "Summarize this conversation clearly. Keep key technical context, decisions, goals, and constraints."
+      },
+      {
+        role: "user",
+        content: text
+      }
+    ]
+  });
+
+  return completion.choices[0]?.message?.content || "";
+}
+
 async function callClaude({
   systemPrompt,
   extraSystemMessages = [],
   history = [],
-  userMessage
+  userMessage,
+  summary = ""
 }) {
   const systemBlocks = [
     systemPrompt,
+    ...(summary ? [`Conversation summary:\n${summary}`] : []),
     ...extraSystemMessages.filter(Boolean)
   ].join("\n\n");
 
@@ -470,18 +538,91 @@ app.post("/api/chat", async (req, res) => {
     }
 
     const codeRequest = isCodeRequest(trimmedMessage);
-    const effectiveMode = codeRequest ? inferMode(trimmedMessage) : "chat";
+    let effectiveMode = codeRequest ? inferMode(trimmedMessage) : "chat";
+
+    if (trimmedMessage.toLowerCase().startsWith("generate ")) {
+      effectiveMode = "file";
+    }
 
     const { data: history, error: historyError } = await supabase
       .from("messages")
-      .select("role, content")
+      .select("role, content, created_at")
       .eq("session_id", sessionId)
       .order("created_at", { ascending: true })
-      .limit(20);
+      .limit(30);
 
     if (historyError) {
       console.error("History load error:", historyError);
     }
+
+    const cleanHistory = (history || []).filter(
+      (msg) =>
+        msg &&
+        (msg.role === "user" || msg.role === "assistant") &&
+        typeof msg.content === "string"
+    );
+
+    // 🔥 NEW: auto-generate .env templates without using Claude/Groq
+    if (trimmedMessage.toLowerCase().includes(".env")) {
+      const type = detectProjectType(trimmedMessage, cleanHistory);
+      const template = getEnvTemplate(type);
+
+      const { error: userInsertError } = await supabase.from("messages").insert({
+        session_id: sessionId,
+        role: "user",
+        content: trimmedMessage
+      });
+
+      if (userInsertError) {
+        console.error("User message save error:", userInsertError);
+      }
+
+      const { error: assistantInsertError } = await supabase.from("messages").insert({
+        session_id: sessionId,
+        role: "assistant",
+        content: template
+      });
+
+      if (assistantInsertError) {
+        console.error("Assistant message save error:", assistantInsertError);
+      }
+
+      return res.json({
+        reply: template,
+        name: "TweakBot",
+        mode: effectiveMode,
+        provider: "system"
+      });
+    }
+
+    // 🔥 NEW: compress older context into summaries when chats get long
+    if (cleanHistory.length > 20) {
+      const older = cleanHistory.slice(0, 10);
+      const summaryText = await summarizeMessages(older);
+
+      const { error: summaryInsertError } = await supabase.from("summaries").insert({
+        session_id: sessionId,
+        content: summaryText
+      });
+
+      if (summaryInsertError) {
+        console.error("Summary save error:", summaryInsertError);
+      }
+    }
+
+    // 🔥 NEW: load latest summary and inject it into model context
+    const { data: summaryRows, error: summaryLoadError } = await supabase
+      .from("summaries")
+      .select("content")
+      .eq("session_id", sessionId)
+      .order("created_at", { ascending: false })
+      .limit(1);
+
+    if (summaryLoadError) {
+      console.error("Summary load error:", summaryLoadError);
+    }
+
+    const summary = summaryRows?.[0]?.content || "";
 
     const { error: userInsertError } = await supabase.from("messages").insert({
       session_id: sessionId,
@@ -493,12 +634,8 @@ app.post("/api/chat", async (req, res) => {
       console.error("User message save error:", userInsertError);
     }
 
-    const cleanHistory = (history || []).filter(
-      (msg) =>
-        msg &&
-        (msg.role === "user" || msg.role === "assistant") &&
-        typeof msg.content === "string"
-    );
+    const recentHistory =
+      cleanHistory.length > 10 ? cleanHistory.slice(-10) : cleanHistory;
 
     let modePrompt = "";
 
@@ -523,6 +660,7 @@ app.post("/api/chat", async (req, res) => {
         reply = await callClaude({
           systemPrompt: SYSTEM_PROMPT,
           extraSystemMessages: [
+            forceStepModePrompt(),
             codingRulesPrompt(),
             modePrompt,
             liveContext ? `Live context:\n${liveContext}` : "",
@@ -530,8 +668,9 @@ app.post("/api/chat", async (req, res) => {
               ? `Reference snippets:\n${referenceContext}\n\nIf reference context and model memory differ, prefer the reference context.`
               : ""
           ],
-          history: cleanHistory,
-          userMessage: trimmedMessage
+          history: recentHistory,
+          userMessage: trimmedMessage,
+          summary
         });
       } catch (err) {
         console.error("Claude failed, falling back to Groq:", err?.message || err);
@@ -542,6 +681,10 @@ app.post("/api/chat", async (req, res) => {
             model: "llama-3.1-8b-instant",
             messages: [
               { role: "system", content: SYSTEM_PROMPT },
+              ...(summary
+                ? [{ role: "system", content: `Conversation summary:\n${summary}` }]
+                : []),
+              { role: "system", content: forceStepModePrompt() },
               { role: "system", content: codingRulesPrompt() },
               ...(modePrompt ? [{ role: "system", content: modePrompt }] : []),
               ...(liveContext ? [{ role: "system", content: `Live context:\n${liveContext}` }] : []),
@@ -553,7 +696,7 @@ app.post("/api/chat", async (req, res) => {
                       `If reference context and model memory differ, prefer the reference context.`
                   }]
                 : []),
-              ...cleanHistory,
+              ...recentHistory,
               { role: "user", content: trimmedMessage }
             ]
           });
@@ -575,10 +718,13 @@ app.post("/api/chat", async (req, res) => {
         model: "llama-3.1-8b-instant",
         messages: [
           { role: "system", content: SYSTEM_PROMPT },
+          ...(summary
+            ? [{ role: "system", content: `Conversation summary:\n${summary}` }]
+            : []),
           ...(liveContext
             ? [{ role: "system", content: `Live context:\n${liveContext}` }]
             : []),
-          ...cleanHistory,
+          ...recentHistory,
           { role: "user", content: trimmedMessage }
         ]
       });
