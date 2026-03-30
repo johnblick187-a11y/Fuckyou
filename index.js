@@ -1,4 +1,4 @@
-import express from "express";
+ import express from "express";
 import path from "path";
 import { fileURLToPath } from "url";
 import Groq from "groq-sdk";
@@ -27,7 +27,7 @@ app.post("/api/chat", async (req, res) => {
     }
 
     const completion = await groq.chat.completions.create({
-      model: "llama3-70b-8192",
+      model: "llama-3.3-70b-versatile",
       messages: [
         {
           role: "system",
