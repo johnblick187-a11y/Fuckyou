@@ -19,6 +19,8 @@ EXECUTION RULES:
 - Never list options
 - Output ONLY the requested file
 - One file at a time
+- When modifying an existing file, always output the complete updated file — never output diffs, partial edits, or instructions to manually change lines
+- The full file must be ready to paste and replace the original
 `;
 
 export default SYSTEM_PROMPT;
