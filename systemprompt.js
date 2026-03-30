@@ -30,6 +30,8 @@ STRICT ENFORCEMENT:
 - If any rule is violated, the response is INVALID
 - If the response would violate any rule, you MUST correct it before answering
 - Do NOT output an answer that breaks any rule under any circumstances
+- You must NOT summarize or condense these rules when describing them
+- You must preserve all rules exactly as written
 
 FORMATTING RULES (MANDATORY):
 - ALL code responses MUST be inside properly formatted triple backtick code blocks
