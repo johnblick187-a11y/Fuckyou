@@ -1,249 +1,140 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>TweakBot</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 
-  <style>
-    body {
-      margin: 0;
-      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-      background: #0f0f0f;
-      color: #fff;
-      height: 100vh;
-      overflow: hidden;
+<title>TweakBot</title>
 
-      /* 🔥 SAFE AREA FIX */
-      padding-top: env(safe-area-inset-top);
-      padding-bottom: env(safe-area-inset-bottom);
-    }
+<style>
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
 
-    #app {
-      display: flex;
-      height: 100%;
-      width: 100%;
-    }
+body {
+  background: #0a0a0a;
+  color: white;
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+  height: 100vh;
+  display: flex;
+}
 
-    #sidebar {
-      width: 260px;
-      background: #0b0b0b;
-      border-right: 1px solid #222;
-      display: flex;
-      flex-direction: column;
-    }
+/* ===== SIDEBAR ===== */
+.sidebar {
+  width: 260px;
+  background: #111;
+  border-right: 1px solid #222;
+  padding: 10px;
+}
 
-    #sidebarHeader {
-      padding: 14px;
-      border-bottom: 1px solid #222;
-    }
+/* hide sidebar on mobile */
+@media (max-width: 768px) {
+  .sidebar {
+    display: none;
+  }
+}
 
-    #newChatBtn {
-      width: 100%;
-      border: none;
-      background: #1e88e5;
-      color: #fff;
-      padding: 10px;
-      border-radius: 8px;
-      cursor: pointer;
-      font-weight: bold;
-    }
+/* ===== MAIN ===== */
+.main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
 
-    #sessionList {
-      flex: 1;
-      overflow-y: auto;
-      padding: 8px;
-    }
+/* ===== HEADER ===== */
+.header {
+  padding: 16px;
+  padding-top: calc(16px + env(safe-area-inset-top));
+  border-bottom: 1px solid #222;
+  font-weight: bold;
+}
 
-    #main {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      min-width: 0;
-    }
+/* ===== CHAT ===== */
+.chat {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+}
 
-    /* 🔥 HEADER FIX */
-    #header {
-      padding: 20px 16px 14px;
-      border-bottom: 1px solid #222;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      background: #0f0f0f;
-    }
+/* ===== INPUT ===== */
+.input-container {
+  display: flex;
+  gap: 10px;
+  padding: 12px;
+  padding-bottom: calc(12px + env(safe-area-inset-bottom));
+  border-top: 1px solid #222;
+  background: #0a0a0a;
+  position: sticky;
+  bottom: 0;
+}
 
-    #title {
-      font-size: 18px;
-      font-weight: bold;
-    }
+input {
+  flex: 1;
+  padding: 12px;
+  border-radius: 8px;
+  border: none;
+  background: #111;
+  color: white;
+}
 
-    #status {
-      font-size: 12px;
-      color: #aaa;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    #statusDot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: #4caf50;
-    }
-
-    /* 🔥 CHAT SPACING FIX */
-    #chat {
-      flex: 1;
-      overflow-y: auto;
-      padding: 20px 16px 12px;
-      display: flex;
-      flex-direction: column;
-      gap: 14px;
-    }
-
-    .msg {
-      max-width: 90%;
-      line-height: 1.5;
-    }
-
-    .user {
-      align-self: flex-end;
-      color: #ff4d4d;
-    }
-
-    .bot {
-      align-self: flex-start;
-      color: #e8e8e8;
-    }
-
-    .bot strong {
-      color: #a5d6a7;
-    }
-
-    pre {
-      background: #000;
-      border: 1px solid #1f1f1f;
-      border-radius: 8px;
-      padding: 12px;
-      overflow-x: auto;
-    }
-
-    code {
-      color: #00ff9c;
-    }
-
-    #typing {
-      font-size: 13px;
-      color: #888;
-      padding: 0 16px 8px;
-      display: none;
-    }
-
-    /* 🔥 INPUT FIX */
-    #inputBar {
-      display: flex;
-      border-top: 1px solid #222;
-      background: #0f0f0f;
-
-      padding-bottom: calc(env(safe-area-inset-bottom) + 8px);
-    }
-
-    input {
-      flex: 1;
-      padding: 12px;
-      border: none;
-      outline: none;
-      background: #111;
-      color: #fff;
-      font-size: 16px;
-    }
-
-    .send-btn {
-      padding: 12px 16px;
-      border: none;
-      background: #1e88e5;
-      color: #fff;
-      font-weight: bold;
-      cursor: pointer;
-    }
-  </style>
+button {
+  padding: 12px 18px;
+  background: #007bff;
+  border: none;
+  border-radius: 8px;
+  color: white;
+  font-weight: bold;
+}
+</style>
 </head>
+
 <body>
-  <div id="app">
-    <aside id="sidebar">
-      <div id="sidebarHeader">
-        <button id="newChatBtn">New Chat</button>
-      </div>
-      <div id="sessionList"></div>
-    </aside>
 
-    <main id="main">
-      <div id="header">
-        <div id="title">TweakBot</div>
-        <div id="status">
-          <div id="statusDot"></div>
-          <span>Online</span>
-        </div>
-      </div>
+<div class="sidebar">
+  <button style="width:100%">Chat</button>
+</div>
 
-      <div id="chat"></div>
-      <div id="typing">TweakBot is typing...</div>
+<div class="main">
 
-      <div id="inputBar">
-        <input id="input" placeholder="Message TweakBot..." />
-        <button class="send-btn" onclick="handleSend()">Send</button>
-      </div>
-    </main>
+  <div class="header">
+    TweakBot ● Online
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/dompurify@3.1.6/dist/purify.min.js"></script>
+  <div class="chat" id="chat"></div>
 
-  <script>
-    const chat = document.getElementById("chat");
-    const input = document.getElementById("input");
-    const typing = document.getElementById("typing");
+  <div class="input-container">
+    <input id="input" placeholder="Message TweakBot..." />
+    <button onclick="send()">Send</button>
+  </div>
 
-    function addMessage(role, text) {
-      const div = document.createElement("div");
-      div.className = "msg " + role;
+</div>
 
-      if (role === "user") {
-        div.textContent = text;
-      } else {
-        div.innerHTML =
-          "<strong>TweakBot:</strong><br>" +
-          DOMPurify.sanitize(marked.parse(text || ""));
-      }
+<script>
+async function send() {
+  const input = document.getElementById("input");
+  const chat = document.getElementById("chat");
 
-      chat.appendChild(div);
-      chat.scrollTop = chat.scrollHeight;
-    }
+  const message = input.value;
+  if (!message) return;
 
-    async function handleSend() {
-      const message = input.value.trim();
-      if (!message) return;
+  chat.innerHTML += `<div>${message}</div>`;
+  input.value = "";
 
-      addMessage("user", message);
-      input.value = "";
-      typing.style.display = "block";
+  const res = await fetch("/api/chat", {
+    method: "POST",
+    headers: {"Content-Type":"application/json"},
+    body: JSON.stringify({ message })
+  });
 
-      const res = await fetch("/api/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message })
-      });
+  const data = await res.json();
 
-      const data = await res.json();
-      typing.style.display = "none";
+  chat.innerHTML += `<div style="color:#4dabf7">${data.reply}</div>`;
+  chat.scrollTop = chat.scrollHeight;
+}
+</script>
 
-      addMessage("bot", data.reply);
-    }
-
-    input.addEventListener("keydown", (e) => {
-      if (e.key === "Enter") handleSend();
-    });
-  </script>
 </body>
 </html>
