@@ -2,11 +2,19 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1, viewport-fit=cover"
-  />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>TweakBot</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <link href="https://cdn.jsdelivr.net/npm/prismjs/themes/prism-tomorrow.css" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/prismjs/prism.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs/components/prism-javascript.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs/components/prism-typescript.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs/components/prism-json.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs/components/prism-markup.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs/components/prism-css.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs/components/prism-bash.min.js"></script>
+
   <style>
     :root {
       color-scheme: dark;
@@ -17,9 +25,8 @@
       --border: rgba(255, 255, 255, 0.08);
       --text: #f5f7fb;
       --muted: #98a2b3;
-      --accent: #ff8a5b;
-      --accent-2: #ff6a2a;
-      --danger: #ff5d5d;
+      --accent: #ff3b3b;
+      --accent-2: #d90429;
       --shadow: 0 14px 34px rgba(0, 0, 0, 0.34);
       --radius: 18px;
       --safe-top: env(safe-area-inset-top, 0px);
@@ -32,8 +39,7 @@
       -webkit-tap-highlight-color: transparent;
     }
 
-    html,
-    body {
+    html, body {
       margin: 0;
       height: 100%;
       background: var(--bg);
@@ -54,9 +60,7 @@
       overscroll-behavior: none;
     }
 
-    button,
-    input,
-    textarea {
+    button, input, textarea {
       font: inherit;
     }
 
@@ -64,7 +68,7 @@
       height: 100dvh;
       display: flex;
       background:
-        radial-gradient(circle at top, rgba(255, 138, 91, 0.12), transparent 28%),
+        radial-gradient(circle at top, rgba(255, 59, 59, 0.12), transparent 28%),
         var(--bg);
       padding-top: var(--safe-top);
       padding-bottom: var(--safe-bottom);
@@ -122,6 +126,7 @@
       place-items: center;
       font-size: 18px;
       flex: 0 0 auto;
+      cursor: pointer;
     }
 
     .primary-btn {
@@ -132,7 +137,8 @@
       font-weight: 800;
       color: white;
       background: linear-gradient(180deg, var(--accent), var(--accent-2));
-      box-shadow: 0 8px 18px rgba(255, 106, 42, 0.3);
+      box-shadow: 0 8px 18px rgba(255, 59, 59, 0.35);
+      cursor: pointer;
     }
 
     .sidebar-search {
@@ -167,11 +173,12 @@
       text-align: left;
       margin-bottom: 10px;
       display: block;
+      cursor: pointer;
     }
 
     .session-item.active {
-      background: linear-gradient(180deg, rgba(255, 138, 91, 0.16), rgba(255, 106, 42, 0.08));
-      border-color: rgba(255, 138, 91, 0.35);
+      background: linear-gradient(180deg, rgba(255, 59, 59, 0.16), rgba(217, 4, 41, 0.08));
+      border-color: rgba(255, 59, 59, 0.35);
     }
 
     .session-top {
@@ -273,6 +280,8 @@
       display: flex;
       gap: 8px;
       flex: 0 0 auto;
+      flex-wrap: wrap;
+      justify-content: flex-end;
     }
 
     .ghost-btn {
@@ -282,6 +291,7 @@
       border-radius: 12px;
       padding: 10px 12px;
       font-weight: 700;
+      cursor: pointer;
     }
 
     .chat {
@@ -379,9 +389,73 @@
     }
 
     .content {
-      white-space: pre-wrap;
+      white-space: normal;
       line-height: 1.55;
       font-size: 15px;
+    }
+
+    .content p {
+      margin: 0 0 10px;
+    }
+
+    .content p:last-child {
+      margin-bottom: 0;
+    }
+
+    .content ul,
+    .content ol {
+      margin: 0 0 10px 20px;
+      padding: 0;
+    }
+
+    .content li {
+      margin-bottom: 6px;
+    }
+
+    .content a {
+      color: #ff7a7a;
+    }
+
+    .content pre {
+      position: relative;
+      background: #0d1117 !important;
+      padding: 16px 14px 14px;
+      border-radius: 12px;
+      overflow-x: auto;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      margin: 12px 0;
+    }
+
+    .content code {
+      font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+      font-size: 13px;
+    }
+
+    .content :not(pre) > code {
+      background: rgba(255, 255, 255, 0.07);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      padding: 2px 6px;
+      border-radius: 8px;
+    }
+
+    .code-copy-btn {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(17, 19, 23, 0.95);
+      color: #fff;
+      border-radius: 10px;
+      padding: 6px 10px;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      z-index: 3;
+    }
+
+    .code-copy-btn.copied {
+      background: linear-gradient(180deg, var(--accent), var(--accent-2));
+      border-color: transparent;
     }
 
     .composer {
@@ -444,8 +518,9 @@
       font-size: 14px;
       padding: 12px 18px;
       min-width: 88px;
-      box-shadow: 0 8px 18px rgba(255, 106, 42, 0.35);
+      box-shadow: 0 8px 18px rgba(255, 59, 59, 0.35);
       flex: 0 0 auto;
+      cursor: pointer;
     }
 
     .send-btn:disabled {
@@ -526,6 +601,15 @@
       .mobile-toggle {
         display: grid;
       }
+
+      .topbar-actions {
+        gap: 6px;
+      }
+
+      .ghost-btn {
+        padding: 9px 10px;
+        font-size: 13px;
+      }
     }
 
     @media (min-width: 901px) {
@@ -551,18 +635,13 @@
         </div>
 
         <button class="primary-btn" id="new-chat-btn" type="button">+ New chat</button>
-        <input
-          class="sidebar-search"
-          id="session-search"
-          type="text"
-          placeholder="Search chats..."
-        />
+        <input class="sidebar-search" id="session-search" type="text" placeholder="Search chats..." />
       </div>
 
       <div class="session-list" id="session-list"></div>
 
       <div class="sidebar-footer">
-        Sessions are stored in your browser. Message history loads from your backend using the selected session.
+        Share button exports the current conversation text. Streaming uses <code>/api/chat/stream</code> if available, then falls back.
       </div>
     </aside>
 
@@ -580,6 +659,8 @@
 
           <div class="topbar-actions">
             <button class="ghost-btn" id="rename-chat-btn" type="button">Rename</button>
+            <button class="ghost-btn" id="share-chat-btn" type="button">Share</button>
+            <button class="ghost-btn" id="copy-chat-btn" type="button">Copy</button>
             <button class="ghost-btn" id="clear-chat-btn" type="button">Clear view</button>
           </div>
         </div>
@@ -590,8 +671,7 @@
           <div class="empty-card">
             <h2>Ready.</h2>
             <p>
-              Back to the cleaner setup: sidebar on one side, chat on the other.
-              Pick an existing chat or start a new one.
+              Streaming, copyable code blocks, and shareable chats are wired into this UI.
             </p>
           </div>
         </div>
@@ -618,19 +698,19 @@
 
   <script>
     const appEl = document.getElementById("app");
-    const sidebarEl = document.getElementById("sidebar");
     const backdropEl = document.getElementById("sidebar-backdrop");
     const openSidebarBtn = document.getElementById("open-sidebar-btn");
     const closeSidebarBtn = document.getElementById("close-sidebar-btn");
     const newChatBtn = document.getElementById("new-chat-btn");
     const renameChatBtn = document.getElementById("rename-chat-btn");
+    const shareChatBtn = document.getElementById("share-chat-btn");
+    const copyChatBtn = document.getElementById("copy-chat-btn");
     const clearChatBtn = document.getElementById("clear-chat-btn");
     const sessionSearchEl = document.getElementById("session-search");
     const sessionListEl = document.getElementById("session-list");
     const chatEl = document.getElementById("chat");
     const inputEl = document.getElementById("input");
     const sendBtn = document.getElementById("send-btn");
-    const emptyState = document.getElementById("empty-state");
     const chatTitleEl = document.getElementById("chat-title");
     const chatSubtitleEl = document.getElementById("chat-subtitle");
     const composerHintEl = document.getElementById("composer-hint");
@@ -642,6 +722,11 @@
     let activeSessionId = localStorage.getItem(ACTIVE_KEY) || "";
     let isSending = false;
     let typingRow = null;
+
+    marked.setOptions({
+      breaks: true,
+      gfm: true
+    });
 
     if (!sessions.length) {
       const created = createSessionObject();
@@ -681,8 +766,7 @@
 
     function formatTime(timestamp) {
       try {
-        const date = new Date(timestamp);
-        return date.toLocaleDateString([], {
+        return new Date(timestamp).toLocaleDateString([], {
           month: "short",
           day: "numeric"
         });
@@ -785,23 +869,20 @@
       inputEl.style.height = Math.min(inputEl.scrollHeight, 180) + "px";
     }
 
-    function removeEmptyState() {
-      if (emptyState) {
-        emptyState.remove();
-      }
-    }
-
     function clearChatView() {
       chatEl.innerHTML = `
         <div class="empty" id="empty-state">
           <div class="empty-card">
             <h2>Ready.</h2>
-            <p>
-              Continue this chat or send the first message for this session.
-            </p>
+            <p>Continue this chat or send the first message for this session.</p>
           </div>
         </div>
       `;
+    }
+
+    function removeEmptyState() {
+      const emptyState = document.getElementById("empty-state");
+      if (emptyState) emptyState.remove();
     }
 
     function scrollToBottom(force = false) {
@@ -809,9 +890,43 @@
         chatEl.scrollTop = chatEl.scrollHeight;
         return;
       }
-
       requestAnimationFrame(() => {
         chatEl.scrollTop = chatEl.scrollHeight;
+      });
+    }
+
+    function renderMarkdownWithCodeTools(container, content) {
+      container.innerHTML = marked.parse(content || "");
+
+      container.querySelectorAll("pre code").forEach((block) => {
+        Prism.highlightElement(block);
+
+        const pre = block.parentElement;
+        if (!pre || pre.querySelector(".code-copy-btn")) return;
+
+        const btn = document.createElement("button");
+        btn.className = "code-copy-btn";
+        btn.type = "button";
+        btn.textContent = "Copy";
+
+        btn.addEventListener("click", async () => {
+          try {
+            await navigator.clipboard.writeText(block.textContent || "");
+            btn.textContent = "Copied";
+            btn.classList.add("copied");
+            setTimeout(() => {
+              btn.textContent = "Copy";
+              btn.classList.remove("copied");
+            }, 1400);
+          } catch {
+            btn.textContent = "Failed";
+            setTimeout(() => {
+              btn.textContent = "Copy";
+            }, 1400);
+          }
+        });
+
+        pre.appendChild(btn);
       });
     }
 
@@ -840,7 +955,7 @@
 
       const body = document.createElement("div");
       body.className = "content";
-      body.textContent = content || "";
+      renderMarkdownWithCodeTools(body, content || "");
 
       bubble.appendChild(meta);
       bubble.appendChild(body);
@@ -848,7 +963,12 @@
       chatEl.appendChild(row);
 
       scrollToBottom();
-      return row;
+      return { row, body };
+    }
+
+    function updateBubbleContent(bodyEl, content) {
+      renderMarkdownWithCodeTools(bodyEl, content || "");
+      scrollToBottom();
     }
 
     function showTyping() {
@@ -966,6 +1086,107 @@
       }
     }
 
+    async function streamAssistantReply(message, sessionId) {
+      const response = await fetch("/api/chat/stream", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Accept": "text/event-stream"
+        },
+        body: JSON.stringify({
+          message,
+          sessionId
+        })
+      });
+
+      if (!response.ok || !response.body) {
+        throw new Error("Streaming unavailable");
+      }
+
+      const { body } = createMessageBubble({
+        role: "assistant",
+        content: "",
+        provider: "stream"
+      });
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder("utf-8");
+
+      let buffer = "";
+      let fullText = "";
+
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+
+        const parts = buffer.split("\n\n");
+        buffer = parts.pop() || "";
+
+        for (const part of parts) {
+          const lines = part.split("\n");
+          let eventName = "message";
+          let data = "";
+
+          for (const line of lines) {
+            if (line.startsWith("event:")) {
+              eventName = line.slice(6).trim();
+            } else if (line.startsWith("data:")) {
+              data += line.slice(5).trimStart();
+            }
+          }
+
+          if (!data) continue;
+
+          if (eventName === "chunk") {
+            fullText += data;
+            updateBubbleContent(body, fullText);
+          } else if (eventName === "done") {
+            if (data) {
+              fullText = data;
+              updateBubbleContent(body, fullText);
+            }
+            updateSessionMetaFromReply(fullText);
+            return fullText;
+          } else if (eventName === "error") {
+            throw new Error(data || "Stream failed");
+          }
+        }
+      }
+
+      updateSessionMetaFromReply(fullText);
+      return fullText;
+    }
+
+    async function sendNormalReply(message, sessionId) {
+      const response = await fetch("/api/chat", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          message,
+          sessionId
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data?.error || "Request failed");
+      }
+
+      createMessageBubble({
+        role: "assistant",
+        content: data.reply || "",
+        provider: data.provider || ""
+      });
+
+      updateSessionMetaFromReply(data.reply || "");
+      return data.reply || "";
+    }
+
     async function sendMessage() {
       if (isSending) return;
 
@@ -984,47 +1205,23 @@
       });
 
       updateSessionMetaFromMessage(message);
-
       inputEl.value = "";
       autoResize();
-      showTyping();
 
       try {
-        const response = await fetch("/api/chat", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            message,
-            sessionId: active.id
-          })
-        });
-
-        const data = await response.json();
-        hideTyping();
-
-        if (!response.ok) {
-          throw new Error(data?.error || "Request failed");
+        await streamAssistantReply(message, active.id);
+      } catch (streamErr) {
+        console.warn("Streaming failed, falling back:", streamErr);
+        try {
+          await sendNormalReply(message, active.id);
+        } catch (error) {
+          createMessageBubble({
+            role: "assistant",
+            content: `Error: ${error.message || "Something went wrong."}`,
+            provider: "client"
+          });
+          updateSessionMetaFromReply(error.message || "Error");
         }
-
-        createMessageBubble({
-          role: "assistant",
-          content: data.reply || "",
-          provider: data.provider || ""
-        });
-
-        updateSessionMetaFromReply(data.reply || "");
-      } catch (error) {
-        hideTyping();
-
-        createMessageBubble({
-          role: "assistant",
-          content: `Error: ${error.message || "Something went wrong."}`,
-          provider: "client"
-        });
-
-        updateSessionMetaFromReply(error.message || "Error");
       } finally {
         isSending = false;
         sendBtn.disabled = false;
@@ -1060,12 +1257,77 @@
       clearChatView();
     }
 
+    async function copyCurrentChat() {
+      const transcript = buildTranscript();
+      if (!transcript.trim()) return;
+
+      try {
+        await navigator.clipboard.writeText(transcript);
+        copyChatBtn.textContent = "Copied";
+        setTimeout(() => {
+          copyChatBtn.textContent = "Copy";
+        }, 1400);
+      } catch {
+        copyChatBtn.textContent = "Failed";
+        setTimeout(() => {
+          copyChatBtn.textContent = "Copy";
+        }, 1400);
+      }
+    }
+
+    async function shareCurrentChat() {
+      const active = getActiveSession();
+      const transcript = buildTranscript();
+
+      if (!transcript.trim()) return;
+
+      if (navigator.share) {
+        try {
+          await navigator.share({
+            title: active?.name || "TweakBot Chat",
+            text: transcript
+          });
+          return;
+        } catch (err) {
+          if (err && err.name === "AbortError") return;
+        }
+      }
+
+      try {
+        await navigator.clipboard.writeText(transcript);
+        shareChatBtn.textContent = "Copied";
+        setTimeout(() => {
+          shareChatBtn.textContent = "Share";
+        }, 1400);
+      } catch {
+        shareChatBtn.textContent = "Failed";
+        setTimeout(() => {
+          shareChatBtn.textContent = "Share";
+        }, 1400);
+      }
+    }
+
+    function buildTranscript() {
+      const rows = [...chatEl.querySelectorAll(".message-row")];
+      return rows
+        .map((row) => {
+          const role = row.classList.contains("user") ? "You" : "TweakBot";
+          const contentNode = row.querySelector(".content");
+          const text = contentNode ? contentNode.innerText.trim() : "";
+          return `${role}:\n${text}`;
+        })
+        .filter(Boolean)
+        .join("\n\n");
+    }
+
     openSidebarBtn?.addEventListener("click", openSidebar);
     closeSidebarBtn?.addEventListener("click", closeSidebar);
     backdropEl?.addEventListener("click", closeSidebar);
 
     newChatBtn.addEventListener("click", createNewChat);
     renameChatBtn.addEventListener("click", renameChat);
+    shareChatBtn.addEventListener("click", shareCurrentChat);
+    copyChatBtn.addEventListener("click", copyCurrentChat);
     clearChatBtn.addEventListener("click", clearCurrentChatView);
     sendBtn.addEventListener("click", sendMessage);
 
