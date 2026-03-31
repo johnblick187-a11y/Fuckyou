@@ -141,7 +141,7 @@ min-width: 0;
 /* ===== HEADER ===== */
 .header {
 padding: 14px 16px;
-padding-top: calc(14px + env(safe-area-inset-top));
+padding-top: max(20px, calc(14px + env(safe-area-inset-top)));
 border-bottom: 1px solid #1e1e1e;
 display: flex;
 align-items: center;
@@ -201,7 +201,7 @@ word-break: break-word;
 
 .msg.user {
 background: #1c1c1c;
-color: white;
+color: #ff3333;
 align-self: flex-end;
 border-bottom-right-radius: 3px;
 }
@@ -249,8 +249,8 @@ animation: bounce 1.2s infinite ease-in-out;
 .input-container {
 display: flex;
 gap: 10px;
-padding: 12px;
-padding-bottom: calc(12px + env(safe-area-inset-bottom));
+padding: 12px 12px;
+padding-bottom: max(20px, calc(12px + env(safe-area-inset-bottom)));
 border-top: 1px solid #1e1e1e;
 background: #0a0a0a;
 }
