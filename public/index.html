@@ -21,14 +21,12 @@
       --bg: #0a0b0d;
       --panel: #111317;
       --panel-2: #171a20;
-      --panel-3: #1d2129;
       --border: rgba(255, 255, 255, 0.08);
       --text: #f5f7fb;
       --muted: #98a2b3;
       --accent: #ff3b3b;
       --accent-2: #d90429;
       --shadow: 0 14px 34px rgba(0, 0, 0, 0.34);
-      --radius: 18px;
       --safe-top: env(safe-area-inset-top, 0px);
       --safe-bottom: env(safe-area-inset-bottom, 0px);
       --sidebar-width: 290px;
@@ -39,7 +37,8 @@
       -webkit-tap-highlight-color: transparent;
     }
 
-    html, body {
+    html,
+    body {
       margin: 0;
       height: 100%;
       background: var(--bg);
@@ -60,7 +59,9 @@
       overscroll-behavior: none;
     }
 
-    button, input, textarea {
+    button,
+    input,
+    textarea {
       font: inherit;
     }
 
@@ -280,8 +281,6 @@
       display: flex;
       gap: 8px;
       flex: 0 0 auto;
-      flex-wrap: wrap;
-      justify-content: flex-end;
     }
 
     .ghost-btn {
@@ -442,7 +441,7 @@
       position: absolute;
       top: 10px;
       right: 10px;
-      border: 1px solid rgba(255,255,255,0.12);
+      border: 1px solid rgba(255, 255, 255, 0.12);
       background: rgba(17, 19, 23, 0.95);
       color: #fff;
       border-radius: 10px;
@@ -456,6 +455,34 @@
     .code-copy-btn.copied {
       background: linear-gradient(180deg, var(--accent), var(--accent-2));
       border-color: transparent;
+    }
+
+    .message-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 10px;
+      flex-wrap: wrap;
+    }
+
+    .message-action-btn {
+      border: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--muted);
+      border-radius: 999px;
+      padding: 7px 10px;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .message-action-btn:active {
+      transform: scale(0.98);
+    }
+
+    .message-action-btn.success {
+      background: linear-gradient(180deg, var(--accent), var(--accent-2));
+      border-color: transparent;
+      color: #fff;
     }
 
     .composer {
@@ -641,7 +668,7 @@
       <div class="session-list" id="session-list"></div>
 
       <div class="sidebar-footer">
-        Share button exports the current conversation text. Streaming uses <code>/api/chat/stream</code> if available, then falls back.
+        Code blocks have copy buttons. Assistant messages have Share and Copy actions.
       </div>
     </aside>
 
@@ -659,8 +686,6 @@
 
           <div class="topbar-actions">
             <button class="ghost-btn" id="rename-chat-btn" type="button">Rename</button>
-            <button class="ghost-btn" id="share-chat-btn" type="button">Share</button>
-            <button class="ghost-btn" id="copy-chat-btn" type="button">Copy</button>
             <button class="ghost-btn" id="clear-chat-btn" type="button">Clear view</button>
           </div>
         </div>
@@ -671,7 +696,7 @@
           <div class="empty-card">
             <h2>Ready.</h2>
             <p>
-              Streaming, copyable code blocks, and shareable chats are wired into this UI.
+              Assistant messages now have per-message Share and Copy buttons under the bubble.
             </p>
           </div>
         </div>
@@ -703,8 +728,6 @@
     const closeSidebarBtn = document.getElementById("close-sidebar-btn");
     const newChatBtn = document.getElementById("new-chat-btn");
     const renameChatBtn = document.getElementById("rename-chat-btn");
-    const shareChatBtn = document.getElementById("share-chat-btn");
-    const copyChatBtn = document.getElementById("copy-chat-btn");
     const clearChatBtn = document.getElementById("clear-chat-btn");
     const sessionSearchEl = document.getElementById("session-search");
     const sessionListEl = document.getElementById("session-list");
@@ -895,6 +918,15 @@
       });
     }
 
+    function setTemporarySuccess(button, originalText, successText = "Copied") {
+      button.textContent = successText;
+      button.classList.add("success");
+      setTimeout(() => {
+        button.textContent = originalText;
+        button.classList.remove("success");
+      }, 1400);
+    }
+
     function renderMarkdownWithCodeTools(container, content) {
       container.innerHTML = marked.parse(content || "");
 
@@ -959,16 +991,73 @@
 
       bubble.appendChild(meta);
       bubble.appendChild(body);
+
+      if (role !== "user") {
+        const actions = document.createElement("div");
+        actions.className = "message-actions";
+
+        const shareBtn = document.createElement("button");
+        shareBtn.className = "message-action-btn";
+        shareBtn.type = "button";
+        shareBtn.textContent = "Share";
+
+        shareBtn.addEventListener("click", async () => {
+          const textToShare = body.innerText.trim();
+          if (!textToShare) return;
+
+          if (navigator.share) {
+            try {
+              await navigator.share({
+                title: "TweakBot Message",
+                text: textToShare
+              });
+              return;
+            } catch (err) {
+              if (err && err.name === "AbortError") return;
+            }
+          }
+
+          try {
+            await navigator.clipboard.writeText(textToShare);
+            setTemporarySuccess(shareBtn, "Share", "Copied");
+          } catch {
+            shareBtn.textContent = "Failed";
+            setTimeout(() => {
+              shareBtn.textContent = "Share";
+            }, 1400);
+          }
+        });
+
+        const copyBtn = document.createElement("button");
+        copyBtn.className = "message-action-btn";
+        copyBtn.type = "button";
+        copyBtn.textContent = "Copy";
+
+        copyBtn.addEventListener("click", async () => {
+          const textToCopy = body.innerText.trim();
+          if (!textToCopy) return;
+
+          try {
+            await navigator.clipboard.writeText(textToCopy);
+            setTemporarySuccess(copyBtn, "Copy", "Copied");
+          } catch {
+            copyBtn.textContent = "Failed";
+            setTimeout(() => {
+              copyBtn.textContent = "Copy";
+            }, 1400);
+          }
+        });
+
+        actions.appendChild(shareBtn);
+        actions.appendChild(copyBtn);
+        bubble.appendChild(actions);
+      }
+
       row.appendChild(bubble);
       chatEl.appendChild(row);
 
       scrollToBottom();
-      return { row, body };
-    }
-
-    function updateBubbleContent(bodyEl, content) {
-      renderMarkdownWithCodeTools(bodyEl, content || "");
-      scrollToBottom();
+      return row;
     }
 
     function showTyping() {
@@ -1086,107 +1175,6 @@
       }
     }
 
-    async function streamAssistantReply(message, sessionId) {
-      const response = await fetch("/api/chat/stream", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Accept": "text/event-stream"
-        },
-        body: JSON.stringify({
-          message,
-          sessionId
-        })
-      });
-
-      if (!response.ok || !response.body) {
-        throw new Error("Streaming unavailable");
-      }
-
-      const { body } = createMessageBubble({
-        role: "assistant",
-        content: "",
-        provider: "stream"
-      });
-
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder("utf-8");
-
-      let buffer = "";
-      let fullText = "";
-
-      while (true) {
-        const { value, done } = await reader.read();
-        if (done) break;
-
-        buffer += decoder.decode(value, { stream: true });
-
-        const parts = buffer.split("\n\n");
-        buffer = parts.pop() || "";
-
-        for (const part of parts) {
-          const lines = part.split("\n");
-          let eventName = "message";
-          let data = "";
-
-          for (const line of lines) {
-            if (line.startsWith("event:")) {
-              eventName = line.slice(6).trim();
-            } else if (line.startsWith("data:")) {
-              data += line.slice(5).trimStart();
-            }
-          }
-
-          if (!data) continue;
-
-          if (eventName === "chunk") {
-            fullText += data;
-            updateBubbleContent(body, fullText);
-          } else if (eventName === "done") {
-            if (data) {
-              fullText = data;
-              updateBubbleContent(body, fullText);
-            }
-            updateSessionMetaFromReply(fullText);
-            return fullText;
-          } else if (eventName === "error") {
-            throw new Error(data || "Stream failed");
-          }
-        }
-      }
-
-      updateSessionMetaFromReply(fullText);
-      return fullText;
-    }
-
-    async function sendNormalReply(message, sessionId) {
-      const response = await fetch("/api/chat", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          message,
-          sessionId
-        })
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data?.error || "Request failed");
-      }
-
-      createMessageBubble({
-        role: "assistant",
-        content: data.reply || "",
-        provider: data.provider || ""
-      });
-
-      updateSessionMetaFromReply(data.reply || "");
-      return data.reply || "";
-    }
-
     async function sendMessage() {
       if (isSending) return;
 
@@ -1205,23 +1193,47 @@
       });
 
       updateSessionMetaFromMessage(message);
+
       inputEl.value = "";
       autoResize();
+      showTyping();
 
       try {
-        await streamAssistantReply(message, active.id);
-      } catch (streamErr) {
-        console.warn("Streaming failed, falling back:", streamErr);
-        try {
-          await sendNormalReply(message, active.id);
-        } catch (error) {
-          createMessageBubble({
-            role: "assistant",
-            content: `Error: ${error.message || "Something went wrong."}`,
-            provider: "client"
-          });
-          updateSessionMetaFromReply(error.message || "Error");
+        const response = await fetch("/api/chat", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            message,
+            sessionId: active.id
+          })
+        });
+
+        const data = await response.json();
+        hideTyping();
+
+        if (!response.ok) {
+          throw new Error(data?.error || "Request failed");
         }
+
+        createMessageBubble({
+          role: "assistant",
+          content: data.reply || "",
+          provider: data.provider || ""
+        });
+
+        updateSessionMetaFromReply(data.reply || "");
+      } catch (error) {
+        hideTyping();
+
+        createMessageBubble({
+          role: "assistant",
+          content: `Error: ${error.message || "Something went wrong."}`,
+          provider: "client"
+        });
+
+        updateSessionMetaFromReply(error.message || "Error");
       } finally {
         isSending = false;
         sendBtn.disabled = false;
@@ -1257,77 +1269,12 @@
       clearChatView();
     }
 
-    async function copyCurrentChat() {
-      const transcript = buildTranscript();
-      if (!transcript.trim()) return;
-
-      try {
-        await navigator.clipboard.writeText(transcript);
-        copyChatBtn.textContent = "Copied";
-        setTimeout(() => {
-          copyChatBtn.textContent = "Copy";
-        }, 1400);
-      } catch {
-        copyChatBtn.textContent = "Failed";
-        setTimeout(() => {
-          copyChatBtn.textContent = "Copy";
-        }, 1400);
-      }
-    }
-
-    async function shareCurrentChat() {
-      const active = getActiveSession();
-      const transcript = buildTranscript();
-
-      if (!transcript.trim()) return;
-
-      if (navigator.share) {
-        try {
-          await navigator.share({
-            title: active?.name || "TweakBot Chat",
-            text: transcript
-          });
-          return;
-        } catch (err) {
-          if (err && err.name === "AbortError") return;
-        }
-      }
-
-      try {
-        await navigator.clipboard.writeText(transcript);
-        shareChatBtn.textContent = "Copied";
-        setTimeout(() => {
-          shareChatBtn.textContent = "Share";
-        }, 1400);
-      } catch {
-        shareChatBtn.textContent = "Failed";
-        setTimeout(() => {
-          shareChatBtn.textContent = "Share";
-        }, 1400);
-      }
-    }
-
-    function buildTranscript() {
-      const rows = [...chatEl.querySelectorAll(".message-row")];
-      return rows
-        .map((row) => {
-          const role = row.classList.contains("user") ? "You" : "TweakBot";
-          const contentNode = row.querySelector(".content");
-          const text = contentNode ? contentNode.innerText.trim() : "";
-          return `${role}:\n${text}`;
-        })
-        .filter(Boolean)
-        .join("\n\n");
-    }
-
     openSidebarBtn?.addEventListener("click", openSidebar);
     closeSidebarBtn?.addEventListener("click", closeSidebar);
     backdropEl?.addEventListener("click", closeSidebar);
 
     newChatBtn.addEventListener("click", createNewChat);
     renameChatBtn.addEventListener("click", renameChat);
-    shareChatBtn.addEventListener("click", shareCurrentChat);
-    copyChatBtn.addEventListener("click", copyCurrentChat);
     clearChatBtn.addEventListener("click", clearCurrentChatView);
     sendBtn.addEventListener("click", sendMessage);
 
