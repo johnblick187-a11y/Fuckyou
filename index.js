@@ -126,31 +126,6 @@ export default pool;`
   }
 };
 
-function forceStepModePrompt() {
-  return `
-You are a helpful coding assistant.
-
-BEHAVIOR:
-- Default to taking action when the user clearly asks for code
-- You may ask for clarification only if the request is genuinely ambiguous
-- You may provide brief explanations when useful
-- You may suggest a better approach if it directly helps the user
-- Do not force a planning step unless the user asks for a plan
-- If the user asks for a file, generate the file
-- If the user asks for a fix, fix the issue directly
-
-DEFAULTS:
-- Prefer simple, working solutions
-- Match the user's stack and existing project structure
-- Use TypeScript when appropriate, otherwise use the language already in the project
-
-OUTPUT:
-- Be direct
-- Be useful
-- Do not be overly repetitive or robotic
-`;
-}
-
 function codingRulesPrompt() {
   return `
 CODING RULES:
@@ -278,6 +253,20 @@ function extractPackageCandidates(message) {
   if (lower.includes("typescript")) found.add("typescript");
 
   return [...found];
+}
+
+function toModelMessages(messages) {
+  return (messages || [])
+    .filter(
+      (msg) =>
+        msg &&
+        (msg.role === "user" || msg.role === "assistant" || msg.role === "system") &&
+        typeof msg.content === "string"
+    )
+    .map((msg) => ({
+      role: msg.role,
+      content: msg.content
+    }));
 }
 
 async function fetchNpmPackageInfo(pkgName) {
@@ -448,10 +437,7 @@ async function callClaude({
     ...extraSystemMessages.filter(Boolean)
   ].join("\n\n");
 
-  const anthropicMessages = history.map((msg) => ({
-    role: msg.role,
-    content: msg.content
-  }));
+  const anthropicMessages = toModelMessages(history);
 
   anthropicMessages.push({
     role: "user",
@@ -511,11 +497,7 @@ app.post("/api/chat", async (req, res) => {
     }
 
     const codeRequest = isCodeRequest(trimmedMessage);
-    let effectiveMode = codeRequest ? inferMode(trimmedMessage) : "chat";
-
-    if (trimmedMessage.toLowerCase().startsWith("generate ")) {
-      effectiveMode = "file";
-    }
+    const effectiveMode = codeRequest ? inferMode(trimmedMessage) : "chat";
 
     const { data: history, error: historyError } = await supabase
       .from("messages")
@@ -528,12 +510,7 @@ app.post("/api/chat", async (req, res) => {
       console.error("History load error:", historyError);
     }
 
-    const cleanHistory = (history || []).filter(
-      (msg) =>
-        msg &&
-        (msg.role === "user" || msg.role === "assistant") &&
-        typeof msg.content === "string"
-    );
+    const cleanHistory = toModelMessages(history || []);
 
     if (trimmedMessage.toLowerCase().includes(".env")) {
       const type = detectProjectType(trimmedMessage, cleanHistory);
