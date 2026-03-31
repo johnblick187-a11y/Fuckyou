@@ -13,33 +13,28 @@
       color: #fff;
       height: 100vh;
       overflow: hidden;
+
+      /* 🔥 SAFE AREA FIX */
+      padding-top: env(safe-area-inset-top);
+      padding-bottom: env(safe-area-inset-bottom);
     }
 
     #app {
       display: flex;
-      height: 100vh;
-      width: 100vw;
+      height: 100%;
+      width: 100%;
     }
 
     #sidebar {
       width: 260px;
-      min-width: 260px;
       background: #0b0b0b;
       border-right: 1px solid #222;
       display: flex;
       flex-direction: column;
-      transition: width 0.2s ease, min-width 0.2s ease;
-    }
-
-    #sidebar.hidden {
-      width: 0;
-      min-width: 0;
-      overflow: hidden;
-      border-right: none;
     }
 
     #sidebarHeader {
-      padding: 14px 12px;
+      padding: 14px;
       border-bottom: 1px solid #222;
     }
 
@@ -48,59 +43,16 @@
       border: none;
       background: #1e88e5;
       color: #fff;
-      font-size: 14px;
-      font-weight: 700;
-      padding: 10px 12px;
+      padding: 10px;
       border-radius: 8px;
       cursor: pointer;
-    }
-
-    #newChatBtn:hover {
-      background: #1565c0;
+      font-weight: bold;
     }
 
     #sessionList {
       flex: 1;
       overflow-y: auto;
       padding: 8px;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-
-    .session-item {
-      border: 1px solid #222;
-      background: #131313;
-      color: #ddd;
-      padding: 10px;
-      border-radius: 8px;
-      cursor: pointer;
-      text-align: left;
-      width: 100%;
-    }
-
-    .session-item:hover {
-      background: #1a1a1a;
-    }
-
-    .session-item.active {
-      border-color: #1e88e5;
-      background: #152235;
-    }
-
-    .session-title {
-      font-size: 14px;
-      font-weight: 600;
-      line-height: 1.3;
-      margin-bottom: 4px;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .session-meta {
-      font-size: 11px;
-      color: #888;
     }
 
     #main {
@@ -108,44 +60,21 @@
       display: flex;
       flex-direction: column;
       min-width: 0;
-      height: 100vh;
     }
 
+    /* 🔥 HEADER FIX */
     #header {
-      padding: 14px 16px;
+      padding: 20px 16px 14px;
       border-bottom: 1px solid #222;
       display: flex;
+      justify-content: space-between;
       align-items: center;
       background: #0f0f0f;
-      gap: 12px;
-    }
-
-    #sidebarToggle {
-      background: none;
-      border: none;
-      color: #fff;
-      font-size: 20px;
-      cursor: pointer;
-      padding: 0 4px;
-      line-height: 1;
-      flex-shrink: 0;
-    }
-
-    #sidebarToggle:hover {
-      color: #aaa;
-    }
-
-    #headerLeft {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      min-width: 0;
     }
 
     #title {
       font-size: 18px;
       font-weight: bold;
-      white-space: nowrap;
     }
 
     #status {
@@ -154,7 +83,6 @@
       display: flex;
       align-items: center;
       gap: 6px;
-      white-space: nowrap;
     }
 
     #statusDot {
@@ -164,124 +92,36 @@
       background: #4caf50;
     }
 
+    /* 🔥 CHAT SPACING FIX */
     #chat {
       flex: 1;
       overflow-y: auto;
-      padding: 16px;
+      padding: 20px 16px 12px;
       display: flex;
       flex-direction: column;
-      gap: 12px;
+      gap: 14px;
     }
 
     .msg {
       max-width: 90%;
-      line-height: 1.45;
-      word-wrap: break-word;
+      line-height: 1.5;
     }
 
     .user {
-      color: #ff4d4d;
       align-self: flex-end;
-      text-align: right;
+      color: #ff4d4d;
     }
 
     .bot {
-      color: #e8e8e8;
       align-self: flex-start;
+      color: #e8e8e8;
     }
 
-    .bot strong.sender {
+    .bot strong {
       color: #a5d6a7;
     }
 
-    .markdown {
-      margin-top: 6px;
-    }
-
-    .markdown p {
-      margin: 0 0 10px;
-    }
-
-    .markdown h1,
-    .markdown h2,
-    .markdown h3,
-    .markdown h4,
-    .markdown h5,
-    .markdown h6 {
-      margin: 12px 0 8px;
-      line-height: 1.25;
-      color: #fff;
-    }
-
-    .markdown ul,
-    .markdown ol {
-      margin: 8px 0 12px 20px;
-      padding: 0;
-    }
-
-    .markdown li {
-      margin: 4px 0;
-    }
-
-    .markdown blockquote {
-      margin: 10px 0;
-      padding: 8px 12px;
-      border-left: 3px solid #444;
-      background: #161616;
-      color: #ccc;
-    }
-
-    .markdown a {
-      color: #7cc4ff;
-      text-decoration: none;
-    }
-
-    .markdown a:hover {
-      text-decoration: underline;
-    }
-
-    .markdown hr {
-      border: none;
-      border-top: 1px solid #2a2a2a;
-      margin: 14px 0;
-    }
-
-    .markdown :not(pre) > code {
-      background: #161616;
-      color: #00ff9c;
-      padding: 2px 6px;
-      border-radius: 5px;
-      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-      font-size: 0.95em;
-    }
-
-    .code-container {
-      position: relative;
-      margin: 10px 0 14px;
-    }
-
-    .code-header {
-      display: flex;
-      justify-content: flex-end;
-      margin-bottom: 6px;
-    }
-
-    .copy-btn {
-      background: #1e88e5;
-      border: none;
-      color: #fff;
-      font-size: 12px;
-      padding: 5px 10px;
-      border-radius: 6px;
-      cursor: pointer;
-    }
-
-    .copy-btn:hover {
-      background: #1565c0;
-    }
-
     pre {
-      margin: 0;
       background: #000;
       border: 1px solid #1f1f1f;
       border-radius: 8px;
@@ -289,25 +129,24 @@
       overflow-x: auto;
     }
 
-    pre code {
+    code {
       color: #00ff9c;
-      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-      font-size: 13px;
-      white-space: pre;
-      display: block;
     }
 
     #typing {
       font-size: 13px;
       color: #888;
-      padding: 0 16px 10px;
+      padding: 0 16px 8px;
       display: none;
     }
 
+    /* 🔥 INPUT FIX */
     #inputBar {
       display: flex;
       border-top: 1px solid #222;
       background: #0f0f0f;
+
+      padding-bottom: calc(env(safe-area-inset-bottom) + 8px);
     }
 
     input {
@@ -320,7 +159,7 @@
       font-size: 16px;
     }
 
-    button.send-btn {
+    .send-btn {
       padding: 12px 16px;
       border: none;
       background: #1e88e5;
@@ -328,267 +167,83 @@
       font-weight: bold;
       cursor: pointer;
     }
-
-    button.send-btn:hover {
-      background: #1565c0;
-    }
-
-    @media (max-width: 600px) {
-      #sidebar {
-        width: 220px;
-        min-width: 220px;
-      }
-
-      #sidebar.hidden {
-        width: 0;
-        min-width: 0;
-      }
-    }
   </style>
-
 </head>
 <body>
   <div id="app">
     <aside id="sidebar">
       <div id="sidebarHeader">
-        <button id="newChatBtn" type="button">New Chat</button>
+        <button id="newChatBtn">New Chat</button>
       </div>
       <div id="sessionList"></div>
     </aside>
 
-```
-<main id="main">
-  <div id="header">
-    <button id="sidebarToggle" onclick="toggleSidebar()">☰</button>
-    <div id="headerLeft">
-      <div id="title">TweakBot</div>
-      <div id="status">
-        <div id="statusDot"></div>
-        <span>Online</span>
+    <main id="main">
+      <div id="header">
+        <div id="title">TweakBot</div>
+        <div id="status">
+          <div id="statusDot"></div>
+          <span>Online</span>
+        </div>
       </div>
-    </div>
-  </div>
 
-  <div id="chat"></div>
-  <div id="typing">TweakBot is typing...</div>
+      <div id="chat"></div>
+      <div id="typing">TweakBot is typing...</div>
 
-  <div id="inputBar">
-    <input id="input" placeholder="Message TweakBot..." />
-    <button class="send-btn" onclick="handleSend()">Send</button>
-  </div>
-</main>
-```
-
+      <div id="inputBar">
+        <input id="input" placeholder="Message TweakBot..." />
+        <button class="send-btn" onclick="handleSend()">Send</button>
+      </div>
+    </main>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-
   <script src="https://cdn.jsdelivr.net/npm/dompurify@3.1.6/dist/purify.min.js"></script>
 
   <script>
     const chat = document.getElementById("chat");
     const input = document.getElementById("input");
     const typing = document.getElementById("typing");
-    const newChatBtn = document.getElementById("newChatBtn");
-    const sessionList = document.getElementById("sessionList");
-    const sidebar = document.getElementById("sidebar");
 
-    marked.setOptions({ breaks: true, gfm: true });
-
-    let sessionId = localStorage.getItem("tweakbot_session");
-    let sessions = [];
-
-    if (!sessionId) {
-      sessionId = crypto.randomUUID();
-      localStorage.setItem("tweakbot_session", sessionId);
-    }
-
-    function toggleSidebar() {
-      sidebar.classList.toggle("hidden");
-    }
-
-    function loadSessionsFromStorage() {
-      try {
-        const raw = localStorage.getItem("tweakbot_sessions");
-        sessions = raw ? JSON.parse(raw) : [];
-        if (!Array.isArray(sessions)) sessions = [];
-      } catch {
-        sessions = [];
-      }
-
-      if (!sessions.find((s) => s.id === sessionId)) {
-        sessions.unshift({ id: sessionId, title: "New Chat", updatedAt: Date.now() });
-        saveSessionsToStorage();
-      }
-    }
-
-    function saveSessionsToStorage() {
-      localStorage.setItem("tweakbot_sessions", JSON.stringify(sessions));
-    }
-
-    function truncateTitle(text) {
-      if (!text) return "New Chat";
-      return text.length > 28 ? text.slice(0, 28) + "..." : text;
-    }
-
-    function updateSessionTitle(message) {
-      const existing = sessions.find((s) => s.id === sessionId);
-      if (!existing) {
-        sessions.unshift({ id: sessionId, title: truncateTitle(message), updatedAt: Date.now() });
-      } else {
-        if (!existing.title || existing.title === "New Chat") {
-          existing.title = truncateTitle(message);
-        }
-        existing.updatedAt = Date.now();
-      }
-      sessions.sort((a, b) => b.updatedAt - a.updatedAt);
-      saveSessionsToStorage();
-      renderSessionList();
-    }
-
-    function renderSessionList() {
-      sessionList.innerHTML = "";
-      sessions.sort((a, b) => b.updatedAt - a.updatedAt);
-      for (const session of sessions) {
-        const item = document.createElement("button");
-        item.className = "session-item" + (session.id === sessionId ? " active" : "");
-        item.type = "button";
-        const date = new Date(session.updatedAt || Date.now());
-        item.innerHTML = `
-          <div class="session-title">${escapeHtml(session.title || "New Chat")}</div>
-          <div class="session-meta">${escapeHtml(date.toLocaleString())}</div>
-        `;
-        item.addEventListener("click", () => switchSession(session.id));
-        sessionList.appendChild(item);
-      }
-    }
-
-    async function switchSession(nextSessionId) {
-      if (!nextSessionId || nextSessionId === sessionId) return;
-      sessionId = nextSessionId;
-      localStorage.setItem("tweakbot_session", sessionId);
-      chat.innerHTML = "";
-      renderSessionList();
-      await loadHistory();
-      input.focus();
-    }
-
-    function startNewChat() {
-      sessionId = crypto.randomUUID();
-      localStorage.setItem("tweakbot_session", sessionId);
-      sessions.unshift({ id: sessionId, title: "New Chat", updatedAt: Date.now() });
-      saveSessionsToStorage();
-      renderSessionList();
-      chat.innerHTML = "";
-      input.focus();
-    }
-
-    function escapeHtml(str) {
-      return String(str)
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;");
-    }
-
-    function enhanceCodeBlocks(container) {
-      container.querySelectorAll("pre").forEach((pre) => {
-        if (pre.parentElement?.classList.contains("code-container")) return;
-        const wrapper = document.createElement("div");
-        wrapper.className = "code-container";
-        const header = document.createElement("div");
-        header.className = "code-header";
-        const btn = document.createElement("button");
-        btn.className = "copy-btn";
-        btn.textContent = "Copy";
-        btn.addEventListener("click", async () => {
-          const code = pre.querySelector("code")?.innerText || pre.innerText;
-          try {
-            await navigator.clipboard.writeText(code);
-            btn.textContent = "Copied!";
-          } catch {
-            btn.textContent = "Failed";
-          }
-          setTimeout(() => { btn.textContent = "Copy"; }, 1200);
-        });
-        header.appendChild(btn);
-        pre.parentNode.insertBefore(wrapper, pre);
-        wrapper.appendChild(header);
-        wrapper.appendChild(pre);
-      });
-    }
-
-    function renderMarkdown(text) {
-      return DOMPurify.sanitize(marked.parse(text || ""));
-    }
-
-    function addMessage(role, text, name = "TweakBot") {
+    function addMessage(role, text) {
       const div = document.createElement("div");
       div.className = "msg " + role;
+
       if (role === "user") {
         div.textContent = text;
       } else {
-        const safeText = typeof text === "string" && text.trim().length > 0
-          ? text : "Unknown — requires verified reference.";
-        div.innerHTML = `
-          <strong class="sender">${escapeHtml(name)}:</strong>
-          <div class="markdown">${renderMarkdown(safeText)}</div>
-        `;
-        enhanceCodeBlocks(div);
+        div.innerHTML =
+          "<strong>TweakBot:</strong><br>" +
+          DOMPurify.sanitize(marked.parse(text || ""));
       }
+
       chat.appendChild(div);
       chat.scrollTop = chat.scrollHeight;
-    }
-
-    async function loadHistory() {
-      try {
-        const res = await fetch(`/api/chat/history?sessionId=${encodeURIComponent(sessionId)}`);
-        const data = await res.json();
-        if (!data.messages || !Array.isArray(data.messages)) return;
-        chat.innerHTML = "";
-        for (const msg of data.messages) {
-          if (msg.role === "user") addMessage("user", msg.content);
-          else if (msg.role === "assistant") addMessage("bot", msg.content, "TweakBot");
-        }
-      } catch (err) {
-        console.error("Failed to load history:", err);
-      }
-    }
-
-    async function sendMessage(message) {
-      typing.style.display = "block";
-      const res = await fetch("/api/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message, sessionId })
-      });
-      const data = await res.json();
-      typing.style.display = "none";
-      return { reply: data.reply, name: data.name || "TweakBot" };
     }
 
     async function handleSend() {
       const message = input.value.trim();
       if (!message) return;
-      updateSessionTitle(message);
+
       addMessage("user", message);
       input.value = "";
-      try {
-        const { reply, name } = await sendMessage(message);
-        addMessage("bot", reply, name);
-        updateSessionTitle(message);
-      } catch (err) {
-        typing.style.display = "none";
-        addMessage("bot", "Error contacting TweakBot.");
-      }
+      typing.style.display = "block";
+
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message })
+      });
+
+      const data = await res.json();
+      typing.style.display = "none";
+
+      addMessage("bot", data.reply);
     }
 
-    newChatBtn.addEventListener("click", startNewChat);
-    input.addEventListener("keydown", (e) => { if (e.key === "Enter") handleSend(); });
-
-    loadSessionsFromStorage();
-    renderSessionList();
-    loadHistory();
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") handleSend();
+    });
   </script>
-
 </body>
 </html>
